@@ -1,0 +1,339 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Brand palette */
+  --sky-aqua: #2CC5F7;
+  --yellow: #FEFC2F;
+  --harvest-orange: #F57A00;
+  --magenta: #E753FE;
+  --scarlet-fire: #F5371F;
+
+  /* Surfaces */
+  --bg-base: #020d20;
+  --bg-deep: #010818;
+  --bg-raised: #0A1838;
+  --bg-elevated: #122046;
+  --bg-inset: #050f24;
+
+  /* Text */
+  --ink-high: #F0F4FF;
+  --ink-mid: #B5C0DD;
+  --ink-low: #7986A8;
+  --ink-dim: #4A5478;
+
+  /* Lines */
+  --line-subtle: rgba(255, 255, 255, 0.06);
+  --line-strong: rgba(255, 255, 255, 0.10);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: var(--bg-base);
+  color: var(--ink-high);
+  height: 100%;
+  overflow: hidden;
+  font-feature-settings: "ss01", "cv01";
+}
+
+body {
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(231, 83, 254, 0.10), transparent),
+    radial-gradient(ellipse 60% 40% at 100% 100%, rgba(44, 197, 247, 0.06), transparent),
+    radial-gradient(ellipse 50% 30% at 0% 100%, rgba(245, 122, 0, 0.04), transparent);
+  background-attachment: fixed;
+}
+
+#__next, main {
+  height: 100%;
+}
+
+/* ── Scrollbars ──────────────────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  transition: background 0.2s;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(231, 83, 254, 0.35);
+}
+
+/* ── Form elements default ───────────────────────────────────────────────── */
+input, textarea, select {
+  background: var(--bg-inset);
+  color: var(--ink-high);
+  border-color: var(--line-subtle);
+}
+
+input::placeholder, textarea::placeholder {
+  color: var(--ink-dim);
+}
+
+input:focus, textarea:focus, select:focus {
+  outline: none !important;
+  border-color: var(--magenta) !important;
+  box-shadow:
+    inset 2px 2px 4px rgba(0,0,0,0.4),
+    inset -1px -1px 2px rgba(255,255,255,0.025),
+    0 0 0 3px rgba(231, 83, 254, 0.18) !important;
+}
+
+input[type="radio"], input[type="checkbox"] {
+  accent-color: var(--magenta);
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* ── Neumorphic utility classes ─────────────────────────────────────────── */
+.neu-card {
+  background: linear-gradient(180deg, rgba(255,255,255,0.025), rgba(255,255,255,0)),
+              var(--bg-raised);
+  box-shadow:
+    5px 5px 12px rgba(0, 0, 0, 0.6),
+    -3px -3px 8px rgba(255, 255, 255, 0.03),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--line-subtle);
+}
+
+.neu-card-sm {
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0)),
+              var(--bg-raised);
+  box-shadow:
+    3px 3px 6px rgba(0, 0, 0, 0.5),
+    -2px -2px 4px rgba(255, 255, 255, 0.025),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--line-subtle);
+}
+
+.neu-inset {
+  background: var(--bg-inset);
+  box-shadow:
+    inset 3px 3px 6px rgba(0, 0, 0, 0.55),
+    inset -2px -2px 4px rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--line-subtle);
+}
+
+.neu-button {
+  background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0)),
+              var(--bg-raised);
+  box-shadow:
+    3px 3px 7px rgba(0, 0, 0, 0.55),
+    -2px -2px 5px rgba(255, 255, 255, 0.03),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  transition: all 0.18s ease;
+  border: 1px solid var(--line-subtle);
+}
+
+.neu-button:hover {
+  background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0)),
+              var(--bg-elevated);
+  box-shadow:
+    4px 4px 9px rgba(0, 0, 0, 0.6),
+    -3px -3px 7px rgba(255, 255, 255, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.10);
+  transform: translateY(-1px);
+}
+
+.neu-button:active,
+.neu-button:disabled {
+  background: var(--bg-inset);
+  box-shadow:
+    inset 3px 3px 6px rgba(0, 0, 0, 0.55),
+    inset -2px -2px 4px rgba(255, 255, 255, 0.025);
+  transform: translateY(0);
+}
+
+.neu-button-primary {
+  background: linear-gradient(135deg, #E753FE 0%, #B240D8 100%);
+  color: white;
+  font-weight: 600;
+  box-shadow:
+    0 5px 14px rgba(231, 83, 254, 0.40),
+    0 2px 5px rgba(231, 83, 254, 0.30),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.15);
+  transition: all 0.18s ease;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.neu-button-primary:hover {
+  background: linear-gradient(135deg, #EC78FE 0%, #C44DEC 100%);
+  box-shadow:
+    0 7px 22px rgba(231, 83, 254, 0.55),
+    0 3px 8px rgba(231, 83, 254, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.30),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.10);
+  transform: translateY(-1px);
+}
+
+.neu-button-primary:active,
+.neu-button-primary:disabled {
+  box-shadow:
+    inset 3px 3px 6px rgba(0, 0, 0, 0.4),
+    inset -1px -1px 2px rgba(255, 255, 255, 0.10);
+  transform: translateY(0);
+  opacity: 0.9;
+}
+
+.neu-button-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.neu-pill {
+  background: var(--bg-elevated);
+  box-shadow:
+    2px 2px 4px rgba(0, 0, 0, 0.45),
+    -1px -1px 3px rgba(255, 255, 255, 0.025),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--line-subtle);
+}
+
+.neu-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+}
+
+/* ── Glow ring (use as wrapper) ─────────────────────────────────────────── */
+.glow-magenta-soft {
+  box-shadow: 0 0 24px rgba(231, 83, 254, 0.25);
+}
+
+/* ── Animations ─────────────────────────────────────────────────────────── */
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,0.02) 25%,
+    rgba(255,255,255,0.05) 50%,
+    rgba(255,255,255,0.02) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.8s infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-in {
+  animation: slideInUp 0.35s ease-out both;
+}
+
+@keyframes sectionReveal {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.report-section {
+  animation: sectionReveal 0.4s ease-out both;
+}
+
+/* Loading dots */
+.loading-dots::after {
+  content: '';
+  animation: dots 1.5s steps(4, end) infinite;
+}
+
+@keyframes dots {
+  0%, 20% { content: ''; }
+  40% { content: '.'; }
+  60% { content: '..'; }
+  80%, 100% { content: '...'; }
+}
+
+/* Step connector line (legacy) */
+.step-connector {
+  position: absolute;
+  left: 15px;
+  top: 32px;
+  width: 2px;
+  height: calc(100% - 32px);
+  background: rgba(255, 255, 255, 0.08);
+  z-index: 0;
+}
+
+.step-connector.completed {
+  background: linear-gradient(180deg, var(--magenta), rgba(231, 83, 254, 0.3));
+}
+
+/* Tooltip */
+.tooltip-content {
+  position: absolute;
+  z-index: 50;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 260px;
+  background: var(--bg-deep);
+  color: var(--ink-high);
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 12px;
+  line-height: 1.5;
+  pointer-events: none;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.6), 0 0 0 1px var(--line-subtle);
+}
+
+/* Prose-like report content */
+.report-prose p {
+  margin: 0 0 0.75rem;
+  line-height: 1.7;
+}
+
+.report-prose ul {
+  margin: 0 0 0.75rem;
+  padding-left: 1.25rem;
+}
+
+.report-prose li {
+  margin-bottom: 0.4rem;
+  line-height: 1.6;
+}
+
+/* Selection */
+::selection {
+  background: rgba(231, 83, 254, 0.4);
+  color: white;
+}
