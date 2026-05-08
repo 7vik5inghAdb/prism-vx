@@ -11,10 +11,22 @@ import {
   RotateCcw,
   ArrowRight,
   CheckCircle,
+  FileText,
+  FileType2,
+  Paperclip,
+  Loader2,
 } from "lucide-react";
 import { Message } from "@/components/conversation/Message";
 import { EditableText } from "@/components/conversation/EditableText";
-import type { ResearchContext } from "@/types";
+import { AutoTextarea } from "@/components/conversation/AutoTextarea";
+import {
+  ACCEPT_LIST,
+  ACCEPT_EXTENSIONS,
+  parseFile,
+  totalBytes,
+  formatSize,
+} from "@/lib/attachments";
+import type { ResearchContext, Attachment, AttachmentKind } from "@/types";
 
 interface FormErrors {
   hypothesis?: string;
@@ -38,6 +50,7 @@ Ab India karega design
 Now anyone can design
 Empowering Indians to design`,
   variantsLabel: "Tagline",
+  attachments: [],
 };
 
 const EMPTY_FORM: ResearchContext = {
@@ -47,16 +60,232 @@ const EMPTY_FORM: ResearchContext = {
   objectives: "",
   variants: "",
   variantsLabel: "",
+  attachments: [],
 };
+
+function kindIcon(kind: AttachmentKind) {
+  switch (kind) {
+    case "image":
+      return ImageIcon;
+    case "pdf":
+      return FileType2;
+    case "docx":
+      return FileText;
+    default:
+      return FileText;
+  }
+}
+
+function kindLabel(kind: AttachmentKind) {
+  switch (kind) {
+    case "image":
+      return "IMAGE";
+    case "pdf":
+      return "PDF";
+    case "docx":
+      return "DOCX";
+    case "txt":
+      return "TEXT";
+  }
+}
+
+function kindBadgeColor(kind: AttachmentKind) {
+  switch (kind) {
+    case "image":
+      return "bg-magenta/15 text-magenta border-magenta/40";
+    case "pdf":
+      return "bg-scarlet/15 text-scarlet border-scarlet/40";
+    case "docx":
+      return "bg-sky/15 text-sky border-sky/40";
+    case "txt":
+      return "bg-yellow/15 text-yellow border-yellow/40";
+  }
+}
+
+function AttachmentUploader({
+  attachments,
+  onAdd,
+  onRemove,
+}: {
+  attachments: Attachment[];
+  onAdd: (a: Attachment) => void;
+  onRemove: (id: string) => void;
+}) {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [parseError, setParseError] = useState<string | null>(null);
+  const [parsing, setParsing] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+
+  async function handleFiles(files: FileList | File[]) {
+    setParseError(null);
+    setParsing(true);
+    try {
+      let runningTotal = totalBytes(attachments);
+      for (const file of Array.from(files)) {
+        const result = await parseFile(file, runningTotal);
+        if (result.error) {
+          setParseError(result.error);
+          continue;
+        }
+        if (result.attachment) {
+          onAdd(result.attachment);
+          runningTotal += result.attachment.size;
+        }
+      }
+    } finally {
+      setParsing(false);
+    }
+  }
+
+  function onInputChange(e: React.ChangeEvent<HTMLInputElement>) {
+    if (e.target.files && e.target.files.length > 0) {
+      handleFiles(e.target.files);
+      // Reset so re-uploading same file works
+      e.target.value = "";
+    }
+  }
+
+  function onDrop(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    setDragOver(false);
+    if (e.dataTransfer.files.length > 0) handleFiles(e.dataTransfer.files);
+  }
+
+  return (
+    <div>
+      <label className="text-[11px] font-bold text-ink-mid mb-0.5 block">
+        Reference Files{" "}
+        <span className="text-ink-low font-normal">(optional)</span>
+      </label>
+      <p className="text-[10px] text-ink-low mb-1.5 leading-snug">
+        Drop in images, PDFs, DOCX, or text — PRISM will extract their content as additional context.
+      </p>
+
+      <div
+        onClick={() => fileRef.current?.click()}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDragOver(true);
+        }}
+        onDragLeave={() => setDragOver(false)}
+        onDrop={onDrop}
+        className={cn(
+          "border-2 border-dashed rounded-lg p-3 cursor-pointer transition-all",
+          dragOver
+            ? "border-magenta bg-magenta/10"
+            : "border-line hover:border-magenta/50 hover:bg-magenta/5"
+        )}
+      >
+        <div className="flex items-center justify-center gap-2 py-2">
+          {parsing ? (
+            <>
+              <Loader2 className="w-4 h-4 text-magenta animate-spin" />
+              <span className="text-[11px] text-ink-mid">
+                Extracting content…
+              </span>
+            </>
+          ) : (
+            <>
+              <Paperclip className="w-3.5 h-3.5 text-ink-low" />
+              <span className="text-[11px] text-ink-low">
+                Drop files or click to browse
+                <span className="text-ink-dim ml-1">
+                  · PNG, JPG, PDF, DOCX, TXT, MD
+                </span>
+              </span>
+            </>
+          )}
+        </div>
+      </div>
+
+      <input
+        ref={fileRef}
+        type="file"
+        accept={ACCEPT_LIST + "," + ACCEPT_EXTENSIONS}
+        multiple
+        className="hidden"
+        onChange={onInputChange}
+      />
+
+      {parseError && (
+        <p className="text-[10px] text-scarlet mt-1.5 flex items-start gap-1">
+          <AlertCircleIcon className="w-3 h-3 mt-0.5 flex-shrink-0" />
+          {parseError}
+        </p>
+      )}
+
+      {attachments.length > 0 && (
+        <div className="mt-2 space-y-1.5">
+          {attachments.map((att) => {
+            const Icon = kindIcon(att.kind);
+            const isImage = att.kind === "image";
+            return (
+              <div
+                key={att.id}
+                className="flex items-center gap-2 neu-card-sm rounded-md p-2"
+              >
+                {isImage ? (
+                  <img
+                    src={att.content}
+                    alt={att.name}
+                    className="w-8 h-8 object-cover rounded flex-shrink-0"
+                  />
+                ) : (
+                  <div className="w-8 h-8 rounded flex-shrink-0 flex items-center justify-center bg-bg-elevated">
+                    <Icon className="w-4 h-4 text-ink-mid" />
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[11px] text-ink-high font-medium truncate">
+                      {att.name}
+                    </span>
+                    <span
+                      className={cn(
+                        "text-[8px] font-bold px-1 py-0.5 rounded border flex-shrink-0",
+                        kindBadgeColor(att.kind)
+                      )}
+                    >
+                      {kindLabel(att.kind)}
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-ink-low">
+                    {formatSize(att.size)}
+                    {!isImage && att.content && (
+                      <span className="ml-1.5 text-ink-dim">
+                        · {att.content.length.toLocaleString()} chars extracted
+                      </span>
+                    )}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onRemove(att.id);
+                  }}
+                  className="p-1 rounded hover:bg-scarlet/15 text-ink-low hover:text-scarlet transition-colors flex-shrink-0"
+                >
+                  <XIcon className="w-3 h-3" />
+                </button>
+              </div>
+            );
+          })}
+          <p className="text-[10px] text-ink-dim text-right pr-1">
+            {attachments.length} file{attachments.length === 1 ? "" : "s"} ·{" "}
+            {formatSize(totalBytes(attachments))}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function ContextForm({
   form,
   errors,
   setForm,
   setErrors,
-  imagePreview,
-  setImagePreview,
-  fileRef,
   onSubmit,
   onClear,
   isLoading,
@@ -65,9 +294,6 @@ function ContextForm({
   errors: FormErrors;
   setForm: (updater: (f: ResearchContext) => ResearchContext) => void;
   setErrors: (updater: (e: FormErrors) => FormErrors) => void;
-  imagePreview: string | null;
-  setImagePreview: (img: string | null) => void;
-  fileRef: React.RefObject<HTMLInputElement>;
   onSubmit: () => void;
   onClear: () => void;
   isLoading: boolean;
@@ -77,7 +303,7 @@ function ContextForm({
     label: string,
     hint: string,
     placeholder: string,
-    rows = 3
+    minRows = 3
   ) {
     return (
       <div>
@@ -85,7 +311,7 @@ function ContextForm({
           {label} <span className="text-scarlet/80">*</span>
         </label>
         <p className="text-[10px] text-ink-low mb-1.5 leading-snug">{hint}</p>
-        <textarea
+        <AutoTextarea
           value={form[key]}
           onChange={(e) => {
             const v = e.target.value;
@@ -93,9 +319,10 @@ function ContextForm({
             if (errors[key]) setErrors((er) => ({ ...er, [key]: undefined }));
           }}
           placeholder={placeholder}
-          rows={rows}
+          minRows={minRows}
+          maxRows={40}
           className={cn(
-            "w-full px-2.5 py-2 text-[13px] border rounded-md resize-none bg-bg-deep text-ink-high placeholder-ink-dim",
+            "w-full px-2.5 py-2 text-[13px] border rounded-md bg-bg-deep text-ink-high placeholder-ink-dim leading-relaxed",
             errors[key] ? "border-scarlet/40" : "border-line"
           )}
         />
@@ -106,19 +333,15 @@ function ContextForm({
     );
   }
 
-  function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!["image/png", "image/jpeg", "image/jpg"].includes(file.type)) {
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const dataUrl = ev.target?.result as string;
-      setImagePreview(dataUrl);
-      setForm((f) => ({ ...f, imageAsset: dataUrl, imageAssetName: file.name }));
-    };
-    reader.readAsDataURL(file);
+  function addAttachment(att: Attachment) {
+    setForm((f) => ({ ...f, attachments: [...(f.attachments || []), att] }));
+  }
+
+  function removeAttachment(id: string) {
+    setForm((f) => ({
+      ...f,
+      attachments: (f.attachments || []).filter((a) => a.id !== id),
+    }));
   }
 
   return (
@@ -179,73 +402,23 @@ function ContextForm({
             className="flex-1 px-2 py-1 text-[11px] border border-line rounded bg-bg-deep"
           />
         </div>
-        <textarea
+        <AutoTextarea
           value={form.variants || ""}
           onChange={(e) =>
             setForm((f) => ({ ...f, variants: e.target.value }))
           }
           placeholder="One variant per line"
-          rows={4}
-          className="w-full px-2.5 py-2 text-[12px] border border-line rounded-md resize-none bg-bg-deep text-ink-high placeholder-ink-dim font-mono"
+          minRows={4}
+          maxRows={20}
+          className="w-full px-2.5 py-2 text-[12px] border border-line rounded-md bg-bg-deep text-ink-high placeholder-ink-dim font-mono leading-relaxed"
         />
       </div>
 
-      <div>
-        <label className="text-[11px] font-bold text-ink-mid mb-0.5 block">
-          Creative Asset{" "}
-          <span className="text-ink-low font-normal">(optional)</span>
-        </label>
-        <div
-          onClick={() => fileRef.current?.click()}
-          className={cn(
-            "border-2 border-dashed rounded-md p-2.5 cursor-pointer text-center transition-colors hover:border-magenta/50",
-            imagePreview
-              ? "border-magenta/50 bg-magenta/10/20"
-              : "border-line"
-          )}
-        >
-          {imagePreview ? (
-            <div className="flex items-center gap-2">
-              <img
-                src={imagePreview}
-                alt=""
-                className="w-10 h-10 object-cover rounded"
-              />
-              <span className="text-[11px] text-ink-mid flex-1 text-left">
-                {form.imageAssetName}
-              </span>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setImagePreview(null);
-                  setForm((f) => ({
-                    ...f,
-                    imageAsset: undefined,
-                    imageAssetName: undefined,
-                  }));
-                }}
-                className="p-1"
-              >
-                <XIcon className="w-3 h-3 text-ink-low" />
-              </button>
-            </div>
-          ) : (
-            <div className="flex items-center justify-center gap-1.5 py-1">
-              <ImageIcon className="w-3.5 h-3.5 text-ink-dim" />
-              <span className="text-[11px] text-ink-low">
-                Upload PNG/JPG (optional reference)
-              </span>
-            </div>
-          )}
-        </div>
-        <input
-          ref={fileRef}
-          type="file"
-          accept="image/png,image/jpeg,image/jpg"
-          className="hidden"
-          onChange={handleImageUpload}
-        />
-      </div>
+      <AttachmentUploader
+        attachments={form.attachments || []}
+        onAdd={addAttachment}
+        onRemove={removeAttachment}
+      />
 
       <button
         onClick={onSubmit}
@@ -286,10 +459,6 @@ export function Step1Context() {
     existingContext || DEMO_DEFAULTS
   );
   const [errors, setErrors] = useState<FormErrors>({});
-  const [imagePreview, setImagePreview] = useState<string | null>(
-    existingContext?.imageAsset || null
-  );
-  const fileRef = useRef<HTMLInputElement>(null);
   const [stage, setStage] = useState<"input" | "thinking" | "review">(
     interpretation ? "review" : "input"
   );
@@ -339,11 +508,9 @@ export function Step1Context() {
 
   function handleClear() {
     setForm(EMPTY_FORM);
-    setImagePreview(null);
     setErrors({});
   }
 
-  // Updaters for inline editing of interpretation
   function updateInterpretation(
     patch: Partial<NonNullable<typeof interpretation>>
   ) {
@@ -353,7 +520,6 @@ export function Step1Context() {
 
   return (
     <div className="space-y-1">
-      {/* Initial greeting */}
       <Message variant="orchestrator">
         Hi — I&rsquo;m PRISM, your synthetic research partner. Let&rsquo;s start by
         understanding what you&rsquo;re trying to validate. The form below is
@@ -362,7 +528,6 @@ export function Step1Context() {
         &ldquo;Start Fresh&rdquo; to wipe the defaults.
       </Message>
 
-      {/* The form */}
       {stage === "input" && (
         <Message
           variant="orchestrator"
@@ -372,9 +537,6 @@ export function Step1Context() {
               errors={errors}
               setForm={setForm}
               setErrors={setErrors}
-              imagePreview={imagePreview}
-              setImagePreview={setImagePreview}
-              fileRef={fileRef}
               onSubmit={handleSubmit}
               onClear={handleClear}
               isLoading={isLoading}
@@ -383,7 +545,6 @@ export function Step1Context() {
         />
       )}
 
-      {/* Error */}
       {error && (
         <Message variant="orchestrator">
           <div className="flex items-start gap-2 text-scarlet">
@@ -408,7 +569,6 @@ export function Step1Context() {
         </Message>
       )}
 
-      {/* User confirms submission */}
       {(stage === "thinking" || stage === "review") && form.hypothesis && (
         <Message variant="user" status="sent">
           <div className="text-[12px] opacity-90">
@@ -417,12 +577,10 @@ export function Step1Context() {
         </Message>
       )}
 
-      {/* Thinking */}
       {stage === "thinking" && (
         <Message variant="orchestrator" status="thinking" />
       )}
 
-      {/* Interpretation review */}
       {stage === "review" && interpretation && (
         <>
           <Message variant="orchestrator">
@@ -434,7 +592,7 @@ export function Step1Context() {
           <Message
             variant="orchestrator"
             embed={
-              <div className="neu-card-sm rounded-xl p-4 space-y-3">
+              <div className="bg-bg-deep border border-line rounded-xl p-4 space-y-3">
                 <div className="bg-magenta/10 border border-magenta/30 rounded-lg p-3">
                   <p className="text-[10px] font-bold text-magenta uppercase tracking-widest mb-1.5">
                     Summary

@@ -24,11 +24,18 @@ export async function POST(req: NextRequest) {
     }
 
     const userPrompt = buildOrchestratorPrompt(context);
+
+    // Collect image attachments to send as Claude vision content blocks
+    const imageInputs = (context.attachments || [])
+      .filter((a) => a.kind === "image")
+      .map((a) => ({ dataUrl: a.content, mediaType: a.mediaType }));
+
     const response = await callLLM({
       systemPrompt: ORCHESTRATOR_SYSTEM,
       userPrompt,
+      images: imageInputs.length > 0 ? imageInputs : undefined,
       temperature: 0.3,
-      maxTokens: 1500,
+      maxTokens: 2000,
       step: "step1_orchestrate",
     });
 

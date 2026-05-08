@@ -6,13 +6,25 @@ export type SentimentType = "positive" | "negative" | "mixed" | "neutral";
 
 // ── Step 1 ────────────────────────────────────────────────────────────────────
 
+export type AttachmentKind = "image" | "pdf" | "docx" | "txt";
+
+export interface Attachment {
+  id: string;
+  name: string;
+  kind: AttachmentKind;
+  size: number; // bytes
+  // For images: base64 data URL (data:image/png;base64,...)
+  // For docs: extracted plain text
+  content: string;
+  mediaType?: string; // e.g. "image/png"
+}
+
 export interface ResearchContext {
   hypothesis: string;
   productDescription: string;
   targetAudience: string;
   objectives: string;
-  imageAsset?: string; // base64 data URL
-  imageAssetName?: string;
+  attachments?: Attachment[];
   // Optional: for concept-test studies (e.g. tagline A/B/C testing).
   // PM enters one variant per line; orchestrator picks them up.
   variants?: string;

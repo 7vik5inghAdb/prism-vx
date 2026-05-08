@@ -14,9 +14,17 @@ export const MODEL_SIMULATION =
 
 export type ModelTier = "default" | "simulation";
 
+export interface ImageInput {
+  // base64 data URL: "data:image/png;base64,..."
+  dataUrl: string;
+  mediaType?: string;
+}
+
 export interface LLMCallParams {
   systemPrompt: string;
   userPrompt: string;
+  /** Optional images to include alongside the user text (Claude vision). */
+  images?: ImageInput[];
   temperature?: number;
   maxTokens?: number;
   step?: string;
@@ -42,6 +50,29 @@ export async function callLLM(params: LLMCallParams): Promise<LLMResponse> {
   const model =
     params.modelTier === "simulation" ? MODEL_SIMULATION : MODEL_DEFAULT;
 
+  // Build user content blocks (text + optional images)
+  let userContent: Anthropic.Messages.ContentBlockParam[] | string;
+  if (params.images && params.images.length > 0) {
+    const blocks: Anthropic.Messages.ContentBlockParam[] = [];
+    for (const img of params.images) {
+      const m = img.dataUrl.match(/^data:([^;]+);base64,(.+)$/);
+      if (!m) continue;
+      const mediaType = (img.mediaType || m[1]) as
+        | "image/jpeg"
+        | "image/png"
+        | "image/gif"
+        | "image/webp";
+      blocks.push({
+        type: "image",
+        source: { type: "base64", media_type: mediaType, data: m[2] },
+      });
+    }
+    blocks.push({ type: "text", text: params.userPrompt });
+    userContent = blocks;
+  } else {
+    userContent = params.userPrompt;
+  }
+
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     const startTime = Date.now();
     try {
@@ -50,7 +81,7 @@ export async function callLLM(params: LLMCallParams): Promise<LLMResponse> {
         max_tokens: params.maxTokens ?? 4096,
         temperature: params.temperature ?? 0.3,
         system: params.systemPrompt,
-        messages: [{ role: "user", content: params.userPrompt }],
+        messages: [{ role: "user", content: userContent }],
       });
 
       const content = response.content[0];

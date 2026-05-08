@@ -33,14 +33,29 @@ export function buildOrchestratorPrompt(ctx: ResearchContext): string {
     ? `\n\nThe PM has also provided VARIANTS to test (one per line):\n${ctx.variants}\nVariant label: ${ctx.variantsLabel || "Variant"}`
     : "";
 
+  // Attach extracted text from PDFs/DOCX/TXT attachments. Images are sent as
+  // separate vision content blocks, so we only mention them by name here.
+  const docs = (ctx.attachments || []).filter((a) => a.kind !== "image");
+  const images = (ctx.attachments || []).filter((a) => a.kind === "image");
+  const imagesHint = images.length
+    ? `\n\nThe PM has also attached ${images.length} image${images.length === 1 ? "" : "s"} for reference (visible to you in this message): ${images.map((a) => a.name).join(", ")}`
+    : "";
+  const docsBlock = docs.length
+    ? `\n\nADDITIONAL CONTEXT FROM ATTACHED DOCUMENTS:\n${docs
+        .map(
+          (a) =>
+            `--- ${a.name} (${a.kind.toUpperCase()}) ---\n${a.content.slice(0, 8000)}${a.content.length > 8000 ? "\n[…truncated]" : ""}`
+        )
+        .join("\n\n")}`
+    : "";
+
   return `A product manager has submitted the following research context. Interpret it and return a structured understanding.
 
 INPUT:
 Hypothesis: ${ctx.hypothesis}
 Product/Feature: ${ctx.productDescription}
 Target Audience: ${ctx.targetAudience}
-Research Objectives: ${ctx.objectives}${variantsHint}
-${ctx.imageAsset ? "\nNote: The PM also uploaded a creative asset (image) for reference." : ""}
+Research Objectives: ${ctx.objectives}${variantsHint}${imagesHint}${docsBlock}
 
 Return a JSON object with this exact schema:
 {
@@ -55,7 +70,9 @@ Return a JSON object with this exact schema:
   "variants": { "label": "Tagline | Concept | Headline etc.", "items": ["variant 1", "variant 2", ...] }
 }
 
-Set "studyType": "concept_test" and populate "variants" ONLY if the PM is testing multiple named alternatives. Otherwise omit variants and pick the appropriate study type.`;
+Set "studyType": "concept_test" and populate "variants" ONLY if the PM is testing multiple named alternatives. Otherwise omit variants and pick the appropriate study type.
+
+Use information from the attached documents and images to refine your understanding of the product, audience, and objectives — but do not invent details that aren't grounded in the input.`;
 }
 
 // ── Step 2: Persona Generation ────────────────────────────────────────────────
@@ -74,13 +91,22 @@ export function buildPersonaPrompt(
   ctx: ResearchContext,
   interpretation: object
 ): string {
+  const docs = (ctx.attachments || []).filter((a) => a.kind !== "image");
+  const docsBlock = docs.length
+    ? `\n\nADDITIONAL CONTEXT FROM ATTACHED DOCUMENTS:\n${docs
+        .map(
+          (a) =>
+            `--- ${a.name} ---\n${a.content.slice(0, 6000)}${a.content.length > 6000 ? "\n[…truncated]" : ""}`
+        )
+        .join("\n\n")}`
+    : "";
   return `Based on the following research context, generate audience dimension clusters. Each cluster represents a meaningfully distinct segment whose attitudes, language preferences, or design sophistication would shape their response to the research.
 
 RESEARCH CONTEXT:
 ${JSON.stringify(interpretation, null, 2)}
 
 Original target audience description:
-${ctx.targetAudience}
+${ctx.targetAudience}${docsBlock}
 
 For audiences described with explicit cohorts in the input, match those exactly as cluster names. Distribute sampleSize to match any percentages mentioned. Otherwise, generate 3 distinct clusters that capture meaningful variance for THIS specific research.
 
