@@ -64,6 +64,9 @@ interface AppStore extends AppState {
   // UI state
   pipelineOpen: boolean;
   togglePipeline: () => void;
+  expandedReviewStep: Step | null;
+  setExpandedReviewStep: (step: Step | null) => void;
+  toggleReviewStep: (step: Step) => void;
 
   retryCurrentStep: () => void;
   resetAll: () => void;
@@ -100,6 +103,7 @@ const initialRunState = {
   currentRunId: null as string | null,
   currentRunName: null as string | null,
   pipelineOpen: true,
+  expandedReviewStep: null as Step | null,
 };
 
 export const useAppStore = create<AppStore>((set, get) => ({
@@ -175,6 +179,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }),
 
   togglePipeline: () => set((s) => ({ pipelineOpen: !s.pipelineOpen })),
+  setExpandedReviewStep: (step) => set({ expandedReviewStep: step }),
+  toggleReviewStep: (step) =>
+    set((s) => ({
+      expandedReviewStep: s.expandedReviewStep === step ? null : step,
+    })),
 
   retryCurrentStep: () => {
     const step = get().currentStep;

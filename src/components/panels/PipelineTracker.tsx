@@ -1,12 +1,12 @@
 "use client";
 
-import { CheckIcon } from "lucide-react";
+import { CheckIcon, Eye } from "lucide-react";
 import { useAppStore } from "@/lib/store";
-import { STEP_INFO } from "@/types";
+import { STEP_INFO, type Step } from "@/types";
 import { cn } from "@/lib/utils";
 
 export function PipelineTracker() {
-  const { stepStatuses } = useAppStore();
+  const { stepStatuses, expandedReviewStep, toggleReviewStep } = useAppStore();
   const completedCount = Object.values(stepStatuses).filter(
     (s) => s === "completed"
   ).length;
@@ -34,13 +34,30 @@ export function PipelineTracker() {
             const isError = status === "error";
             const isLast = index === STEP_INFO.length - 1;
 
+            const isReviewing = expandedReviewStep === step.number;
+            const Wrapper = isCompleted
+              ? ("button" as const)
+              : ("div" as const);
             return (
-              <div key={step.number} className="relative flex gap-3 pb-6 last:pb-0">
+              <Wrapper
+                key={step.number}
+                onClick={
+                  isCompleted
+                    ? () => toggleReviewStep(step.number as Step)
+                    : undefined
+                }
+                className={cn(
+                  "relative w-full text-left flex gap-3 pb-6 last:pb-0",
+                  isCompleted &&
+                    "group cursor-pointer rounded-lg -mx-2 px-2 py-1 hover:bg-magenta/10 transition-colors",
+                  isReviewing && "bg-magenta/15"
+                )}
+              >
                 {/* Connector line */}
                 {!isLast && (
                   <div
                     className={cn(
-                      "absolute left-[15px] top-8 w-0.5 h-[calc(100%-8px)] transition-all duration-700",
+                      "absolute left-[15px] top-8 w-0.5 h-[calc(100%-8px)] transition-all duration-700 pointer-events-none",
                       isCompleted
                         ? "bg-gradient-to-b from-magenta to-magenta-300"
                         : "bg-line-strong"
@@ -58,7 +75,8 @@ export function PipelineTracker() {
                       isActive &&
                         "bg-bg-raised shadow-neu-sm ring-2 ring-magenta animate-glow-pulse",
                       isPending && "bg-bg-inset shadow-neu-inset",
-                      isError && "bg-scarlet/20 ring-2 ring-scarlet"
+                      isError && "bg-scarlet/20 ring-2 ring-scarlet",
+                      isReviewing && "ring-2 ring-magenta ring-offset-2 ring-offset-bg-deep"
                     )}
                   >
                     {isCompleted ? (
@@ -76,15 +94,16 @@ export function PipelineTracker() {
                 </div>
 
                 {/* Step content */}
-                <div className="pt-1 min-w-0">
+                <div className="pt-1 min-w-0 flex-1">
                   <div className="flex items-center gap-1.5 mb-0.5">
                     <span
                       className={cn(
                         "text-[12px] font-bold leading-tight transition-colors",
-                        isCompleted && "text-ink-mid",
+                        isCompleted && "text-ink-mid group-hover:text-magenta",
                         isActive && "text-ink-high",
                         isPending && "text-ink-dim",
-                        isError && "text-scarlet"
+                        isError && "text-scarlet",
+                        isReviewing && "text-magenta"
                       )}
                     >
                       {step.label}
@@ -94,8 +113,14 @@ export function PipelineTracker() {
                         ACTIVE
                       </span>
                     )}
-                    {isCompleted && (
+                    {isCompleted && !isReviewing && (
                       <CheckIcon className="w-3 h-3 text-magenta" />
+                    )}
+                    {isReviewing && (
+                      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[8px] font-bold bg-magenta/15 text-magenta border border-magenta/30 tracking-wider">
+                        <Eye className="w-2 h-2" />
+                        VIEWING
+                      </span>
                     )}
                   </div>
                   <p
@@ -108,8 +133,14 @@ export function PipelineTracker() {
                   >
                     {step.description}
                   </p>
+                  {isCompleted && (
+                    <span className="text-[9px] text-ink-dim mt-1 inline-flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Eye className="w-2.5 h-2.5" />
+                      Click to {isReviewing ? "hide" : "review"}
+                    </span>
+                  )}
                 </div>
-              </div>
+              </Wrapper>
             );
           })}
         </div>

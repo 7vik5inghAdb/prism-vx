@@ -8,74 +8,150 @@ import { Step3Instrument } from "@/components/steps/Step3Instrument";
 import { Step4Simulation } from "@/components/steps/Step4Simulation";
 import { Step5Report } from "@/components/steps/Step5Report";
 import { StepDivider, Message } from "@/components/conversation/Message";
-import { STEP_INFO } from "@/types";
+import { StepRecapDetail } from "@/components/conversation/StepRecapDetail";
+import { STEP_INFO, type Step } from "@/types";
+import { ChevronDown, BookOpen } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-function CompletedStepRecap({ stepNumber }: { stepNumber: number }) {
-  const { context, interpretation, personas, selectedMethod, instrument, panelResults } = useAppStore();
+function CompletedRecapSummary({ stepNumber }: { stepNumber: number }) {
+  const { context, interpretation, personas, selectedMethod, instrument, panelResults } =
+    useAppStore();
 
   if (stepNumber === 1 && interpretation) {
     return (
-      <Message variant="orchestrator">
-        <span className="text-[12px]">
-          <span className="font-semibold">Context confirmed:</span>{" "}
-          {interpretation.researchFocus}
-        </span>
-      </Message>
+      <span>
+        <span className="font-semibold text-ink-mid">Context confirmed:</span>{" "}
+        {interpretation.researchFocus}
+      </span>
     );
   }
   if (stepNumber === 2 && personas) {
     return (
-      <Message variant="orchestrator">
-        <span className="text-[12px]">
-          <span className="font-semibold">{personas.length} persona clusters</span>{" "}
-          confirmed: {personas.map((p) => p.name).join(", ")}
-        </span>
-      </Message>
+      <span>
+        <span className="font-semibold text-ink-mid">
+          {personas.length} persona clusters
+        </span>{" "}
+        confirmed: {personas.map((p) => p.name).join(", ")}
+      </span>
     );
   }
   if (stepNumber === 3 && instrument && selectedMethod) {
     return (
-      <Message variant="orchestrator">
-        <span className="text-[12px]">
-          <span className="font-semibold capitalize">{selectedMethod}</span>{" "}
-          instrument confirmed · {instrument.questions.length} questions
-          {instrument.variants ? ` · ${instrument.variants.items.length} variants` : ""}
-        </span>
-      </Message>
+      <span>
+        <span className="font-semibold text-ink-mid capitalize">
+          {selectedMethod}
+        </span>{" "}
+        instrument confirmed · {instrument.questions.length} questions
+        {instrument.variants
+          ? ` · ${instrument.variants.items.length} variants`
+          : ""}
+      </span>
     );
   }
   if (stepNumber === 4 && panelResults) {
     return (
-      <Message variant="orchestrator">
-        <span className="text-[12px]">
-          <span className="font-semibold">
-            {panelResults.respondents.length} respondents
-          </span>{" "}
-          simulated and ready for synthesis
-        </span>
-      </Message>
+      <span>
+        <span className="font-semibold text-ink-mid">
+          {panelResults.respondents.length} respondents
+        </span>{" "}
+        simulated
+      </span>
     );
   }
   return null;
 }
 
-export function ConversationPanel() {
-  const { currentStep, stepStatuses } = useAppStore();
-  const scrollRef = useRef<HTMLDivElement>(null);
+function ExpandableRecapCard({
+  stepNumber,
+  refSetter,
+}: {
+  stepNumber: Step;
+  refSetter: (el: HTMLDivElement | null) => void;
+}) {
+  const { expandedReviewStep, toggleReviewStep } = useAppStore();
+  const expanded = expandedReviewStep === stepNumber;
 
+  return (
+    <div ref={refSetter}>
+      <Message
+        variant="orchestrator"
+        embed={
+          <div className="space-y-2">
+            <button
+              onClick={() => toggleReviewStep(stepNumber)}
+              className={cn(
+                "w-full text-left flex items-center justify-between gap-2 px-3 py-2 rounded-lg transition-all",
+                expanded
+                  ? "neu-card-sm border border-magenta/40"
+                  : "neu-card-sm hover:border-magenta/30"
+              )}
+            >
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                <BookOpen
+                  className={cn(
+                    "w-3.5 h-3.5 flex-shrink-0 transition-colors",
+                    expanded ? "text-magenta" : "text-ink-low"
+                  )}
+                />
+                <div className="text-[12px] text-ink-mid min-w-0 flex-1">
+                  <CompletedRecapSummary stepNumber={stepNumber} />
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5 flex-shrink-0">
+                <span className="text-[9px] font-bold text-ink-low uppercase tracking-wider hidden sm:inline">
+                  {expanded ? "Hide" : "Review"}
+                </span>
+                <ChevronDown
+                  className={cn(
+                    "w-3.5 h-3.5 text-ink-low transition-transform",
+                    expanded && "rotate-180 text-magenta"
+                  )}
+                />
+              </div>
+            </button>
+            {expanded && (
+              <div className="animate-slide-in">
+                <StepRecapDetail step={stepNumber} />
+              </div>
+            )}
+          </div>
+        }
+      />
+    </div>
+  );
+}
+
+export function ConversationPanel() {
+  const { currentStep, stepStatuses, expandedReviewStep, setExpandedReviewStep } =
+    useAppStore();
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const stepRefs = useRef<Map<number, HTMLDivElement>>(new Map());
+
+  // Auto-scroll to bottom on step advance (collapse any expanded review)
   useEffect(() => {
+    setExpandedReviewStep(null);
     if (scrollRef.current) {
       scrollRef.current.scrollTo({
         top: scrollRef.current.scrollHeight,
         behavior: "smooth",
       });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentStep]);
 
-  const completedSteps: number[] = [];
+  // Scroll to expanded review step
+  useEffect(() => {
+    if (expandedReviewStep == null) return;
+    const el = stepRefs.current.get(expandedReviewStep);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [expandedReviewStep]);
+
+  const completedSteps: Step[] = [];
   for (let s = 1; s < currentStep; s++) {
-    if (stepStatuses[s as 1 | 2 | 3 | 4] === "completed") {
-      completedSteps.push(s);
+    if (stepStatuses[s as Step] === "completed") {
+      completedSteps.push(s as Step);
     }
   }
 
@@ -96,9 +172,7 @@ export function ConversationPanel() {
     <div className="flex flex-col h-full bg-bg-base">
       <div className="flex-shrink-0 px-5 py-3 border-b border-line bg-bg-deep/60 flex items-center justify-between">
         <div>
-          <p className="text-xs font-bold text-ink-high">
-            Conversation
-          </p>
+          <p className="text-xs font-bold text-ink-high">Conversation</p>
           <p className="text-[10px] text-ink-low">
             Step {currentStep} of 5 · {activeStepInfo?.shortLabel}
           </p>
@@ -115,9 +189,18 @@ export function ConversationPanel() {
         {completedSteps.map((s) => {
           const info = STEP_INFO.find((si) => si.number === s);
           return (
-            <div key={`recap-${s}`}>
+            <div
+              key={`recap-${s}`}
+              ref={(el) => {
+                if (el) stepRefs.current.set(s, el);
+                else stepRefs.current.delete(s);
+              }}
+            >
               <StepDivider stepNumber={s} label={info?.shortLabel || ""} />
-              <CompletedStepRecap stepNumber={s} />
+              <ExpandableRecapCard
+                stepNumber={s}
+                refSetter={() => {}}
+              />
             </div>
           );
         })}
@@ -135,7 +218,7 @@ export function ConversationPanel() {
 
       <div className="flex-shrink-0 px-5 py-2 border-t border-line bg-bg-deep/40">
         <p className="text-[9px] text-ink-dim text-center">
-          Forward-only flow · Each step requires confirmation to advance
+          Forward-only flow · Click past steps in the pipeline to review them
         </p>
       </div>
     </div>
