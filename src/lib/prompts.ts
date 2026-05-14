@@ -49,30 +49,45 @@ export function buildOrchestratorPrompt(ctx: ResearchContext): string {
         .join("\n\n")}`
     : "";
 
+  const rqHint = ctx.researchQuestion?.trim()
+    ? `\nResearch Question (what the PM wants to LEARN): ${ctx.researchQuestion}`
+    : "";
+
   return `A product manager has submitted the following research context. Interpret it and return a structured understanding.
 
 INPUT:
-Hypothesis: ${ctx.hypothesis}
+Hypothesis (what the PM BELIEVES): ${ctx.hypothesis}${rqHint}
 Product/Feature: ${ctx.productDescription}
 Target Audience: ${ctx.targetAudience}
 Research Objectives: ${ctx.objectives}${variantsHint}${imagesHint}${docsBlock}
 
+CLASSIFICATION GUIDE — choose the most specific studyType:
+- variant_comparison: multiple named alternatives compared head-to-head (taglines, layouts, pricing options)
+- positioning_test: testing messaging / brand positioning lines
+- concept_validation: ONE concept or feature, testing desirability/viability
+- workflow_evaluation: testing a multi-step user flow
+- feature_assessment: evaluating a shipped or planned feature's reception
+- attitudinal / behavioral / exploratory: general fallbacks if none of the above fit
+
 Return a JSON object with this exact schema:
 {
-  "summary": "2-3 sentence overview, ADRS-style. If a concept test, name it as such (e.g. 'You are running a positioning concept validation study testing N variants against M audience cohorts').",
-  "restatedHypothesis": "The core hypothesis as a clear, testable statement",
-  "restatedProduct": "What the product/feature is in precise terms; mention competitive context if given",
-  "restatedAudience": "Who the target audience is — name explicit cohorts if multiple are present in the input",
+  "summary": "2-3 sentence overview. Name the study type explicitly (e.g. 'A positioning concept validation testing 5 tagline variants for Adobe Express India').",
+  "restatedHypothesis": "The PM's belief as a testable statement",
+  "restatedResearchQuestion": "What the PM wants to LEARN (distinct from what they believe). If only a hypothesis is given, derive the implicit research question.",
+  "restatedProduct": "What the product/feature is in precise terms",
+  "restatedAudience": "Who the target audience is — name explicit cohorts if multiple are present",
   "restatedObjectives": ["objective 1", "objective 2", "...up to 5"],
   "researchFocus": "The single most critical question this research must answer",
-  "potentialChallenges": ["analytical or design challenge that could complicate this research", "...up to 3"],
-  "studyType": "concept_test | attitudinal | behavioral | exploratory",
+  "potentialChallenges": ["challenge 1", "...up to 3"],
+  "studyType": "variant_comparison | positioning_test | concept_validation | workflow_evaluation | feature_assessment | attitudinal | behavioral | exploratory",
+  "evaluationSubject": "REQUIRED. What exactly is being tested in plain language (e.g. '5 tagline variants for Adobe Express India', or 'AI background removal feature for SMB photographers')",
+  "successCriteria": "REQUIRED. What 'good' looks like — the signal that would let the PM say 'yes ship' or 'yes proceed'",
   "variants": { "label": "Tagline | Concept | Headline etc.", "items": ["variant 1", "variant 2", ...] }
 }
 
-Set "studyType": "concept_test" and populate "variants" ONLY if the PM is testing multiple named alternatives. Otherwise omit variants and pick the appropriate study type.
+Set "variants" ONLY if multiple named alternatives are present in input. Always populate evaluationSubject and successCriteria.
 
-Use information from the attached documents and images to refine your understanding of the product, audience, and objectives — but do not invent details that aren't grounded in the input.`;
+Use information from the attached documents and images to refine your understanding — but do not invent details that aren't grounded in the input.`;
 }
 
 // ── Step 2: Persona Generation ────────────────────────────────────────────────
@@ -162,8 +177,11 @@ export function buildInstrumentPrompt(
   method: ResearchMethod
 ): string {
   const isInterview = method === "interview";
+  const studyType = (interpretation as { studyType?: string }).studyType;
   const isConceptTest =
-    (interpretation as { studyType?: string }).studyType === "concept_test" &&
+    (studyType === "concept_test" ||
+      studyType === "variant_comparison" ||
+      studyType === "positioning_test") &&
     (interpretation as { variants?: object }).variants;
 
   if (isConceptTest && method === "survey") {
@@ -257,27 +275,37 @@ export function buildRespondentSystemPrompt(
   clusterName: string,
   method: ResearchMethod
 ): string {
-  return `You are simulating a real person responding to a user research study. You must:
+  return `You are simulating a real person responding to a user research study.
 
-1. STAY IN CHARACTER throughout all responses. Reflect your specific role, demographics, context, language comfort, expertise level, and life situation. Different personas respond very differently — a senior IT decision-maker in Munich responds differently than a college student in Mumbai or a freelance designer in São Paulo.
+CRITICAL — REACT TO WHAT YOU'RE SHOWN:
+The user message contains the EXACT content you are evaluating (variants, concepts, features, etc.) listed verbatim. You CAN see them. NEVER say "I haven't been shown the [tagline/concept/feature] yet" or "you haven't provided it" — they ARE in the prompt. React to the SPECIFIC text/content you see.
 
-2. BE SPECIFIC AND NATURAL. Real respondents give specific, sometimes messy answers. Reference your actual experiences, the specific tools you use, real frustrations. Don't give marketing-speak. Use natural phrasing — colloquialisms and cultural references where appropriate to your persona.
+REALISM RULES:
+1. STAY IN CHARACTER. Reflect your specific role, demographics, context, expertise. A senior IT buyer in Munich responds nothing like a student in Mumbai.
 
-3. VARY SENTIMENT. Not every respondent likes everything. Some are strongly positive, some negative, some indifferent. Real data has spread — don't cluster everything around 3.5-4.0.
+2. BE SPECIFIC AND NATURAL. Real respondents give specific, messy answers. Reference your actual tools, frustrations, daily reality. No marketing-speak.
 
-4. EVALUATE INDEPENDENTLY. Your reaction to one item shouldn't bias your reaction to the next. Evaluate each on its own merits.
+3. VARY YOUR RESPONSES.
+   - Not every respondent is articulate. Some give 1-2 word answers. Some trail off.
+   - Response length should vary: some 5 words, some 50. Not all are essays.
+   - 5-10% of responses may be "I'm not sure" or "doesn't really apply to me" — that's realistic.
+   - You can occasionally contradict yourself — real people do.
 
-5. CULTURALLY AND CONTEXTUALLY GROUNDED. React to language choices, cultural cues, and contextual signals as your persona would. If something feels aspirational, alienating, exclusionary, patronizing, etc. — say so naturally.
+4. VARY SENTIMENT. Not everyone likes everything. Real data has spread — don't cluster around 3.5-4.0. Use the full range. Some respondents genuinely give 1s and 2s.
 
-6. NEGATIVE FEEDBACK MUST BE SPECIFIC. When you dislike something, articulate why with concrete reasoning — comparisons, examples, gut associations. Don't just say "I don't like it."
+5. EVALUATE INDEPENDENTLY. Each item gets its own honest reaction. Don't let one reaction halo onto another.
 
-7. RATING DISTRIBUTION: Your ratings should reflect genuine reaction. Across many respondents, ratings span the full range. Don't default to middle scores.
+6. CULTURALLY GROUNDED. React to language, cultural cues, and signals as your persona would. If something feels aspirational, alienating, exclusionary, patronizing — say so naturally with concrete reasoning ("sounds like an NGO slogan," "my mom would like this but I wouldn't share it").
+
+7. NEGATIVE FEEDBACK IS SPECIFIC. When you dislike something, articulate WHY with concrete reasoning — comparisons, examples, gut associations.
+
+8. CODE-MIX NATURALLY. If you're Hindi-first, naturally code-mix into responses. If you're English-first, don't force other languages.
 
 YOUR PERSONA:
 Cluster: ${clusterName}
 Profile: ${personaProfile}
 
-${method === "interview" ? "Give detailed, narrative answers. Speak naturally in first person." : "Give realistic, authentic responses. Stay in character throughout."}`;
+${method === "interview" ? "Give detailed, narrative answers. Speak in first person." : "Give realistic, varied responses. Stay in character."}`;
 }
 
 export function buildSurveyBatchPrompt(
@@ -293,16 +321,19 @@ export function buildSurveyBatchPrompt(
     const perVariantQs = questions.filter((q) => q.perVariant);
     const crossQs = questions.filter((q) => !q.perVariant);
 
-    questionBlock = `VARIANTS TO TEST (${variants.length} total):
-${variants.map((v, i) => `[${v.id}] "${v.text}"`).join("\n")}
+    questionBlock = `## VARIANTS YOU ARE EVALUATING (${variants.length} total — these are LITERAL items you must react to by name and content)
 
-PER-VARIANT QUESTIONS (ask once per variant, in randomized order per respondent):
+${variants.map((v, i) => `Variant ${i + 1} [id: ${v.id}]:\n"${v.text}"`).join("\n\n")}
+
+CRITICAL: The text above is the FULL content of each variant. You are NOT being asked about abstract variants — you are reacting to these specific strings. Each respondent must reference the SPECIFIC content (the actual words/phrases) when explaining their reactions. Do NOT say "I haven't seen the variant" or "show me the tagline" — they are RIGHT ABOVE.
+
+## PER-VARIANT QUESTIONS (each is asked once per variant)
 ${perVariantQs.map((q) => formatQuestion(q)).join("\n\n")}
 
-CROSS-VARIANT QUESTIONS (asked once after all variants are seen):
+## CROSS-VARIANT QUESTIONS (asked once after all variants are seen)
 ${crossQs.map((q) => formatQuestion(q)).join("\n\n")}`;
   } else {
-    questionBlock = `QUESTIONS:
+    questionBlock = `## QUESTIONS
 ${questions.map((q) => formatQuestion(q)).join("\n\n")}`;
   }
 
@@ -313,9 +344,10 @@ ${questions.map((q) => formatQuestion(q)).join("\n\n")}`;
   const variantInstructions = hasVariants
     ? `\nFor each respondent:
 - Randomize the order in which you mentally evaluate the variants (don't always start with variant 1)
-- For each PER-VARIANT question, provide one answer per variant — include "variantId" in each answer object
+- For each PER-VARIANT question, provide one answer per variant — include "variantId" in each answer object (use the exact id shown above like "${variants![0].id}")
 - For each CROSS-VARIANT question, provide a single answer (no variantId)
-- Authentic reactions: include culturally grounded specifics, language reactions, hesitations`
+- Quote or paraphrase the SPECIFIC text/words of each variant in your open-ended answers ("the 'Ek click mein design' one sounds…", not "this tagline sounds…")
+- Authentic reactions: include cultural specifics, language reactions, gut associations`
     : "";
 
   return `You are simulating ${respondentProfiles.length} survey respondents. Each has a distinct profile.
@@ -398,16 +430,29 @@ Profile: ${personaProfile.slice(0, 400)}`;
 
 // ── Step 5: Synthesis ─────────────────────────────────────────────────────────
 
-export const SYNTHESIS_SYSTEM = `You are a senior UX research analyst. You synthesize raw research data into formal research reports for senior product and design leadership.
+export const SYNTHESIS_SYSTEM = `You are a senior UX research analyst writing for a product manager who has to make a decision tomorrow.
+
+Every insight must answer: "So what should the PM do?"
+
+BAD: "Users rated the feature 3.2/5"
+GOOD: "Lukewarm reception (3.2/5) — insufficient to justify launch. Refine before shipping, or narrow to the segment that scored higher (Creators, 4.1)."
+
+USE DECISION-FRAME LANGUAGE:
+- Ship / Don't ship / Ship with caveats
+- Proceed with confidence / Proceed with caution / Revisit
+- Prioritize X over Y because [reason]
+- The risk of shipping without addressing this: [specific risk]
+
+AVOID research jargon. NEVER say "statistically significant", "p-value", "n=", "effect size". Instead use: strong signal, directional, split verdict, clear preference, marginal difference, no clear winner.
 
 Your reports must:
-1. LET THE DATA LEAD. If the data shows a clear winner, say so. If there is no clear winner, say that explicitly. Do not force narratives the data does not support.
-2. USE EXACT NUMBERS. Every claim references specific respondent counts, percentages, ratings. "Several respondents" is unacceptable — "10 respondents (16%)" is.
-3. QUOTE RESPONDENTS DIRECTLY. Quotes are real quotes from the panel, not paraphrases. They should feel like real people — specific, contextual, in their own voice.
-4. IDENTIFY TENSIONS AND TRADE-OFFS. Cross-thematic analysis surfaces genuine strategic tensions appropriate to the domain (aspiration vs. clarity, simplicity vs. credibility, broad reach vs. targeted resonance, cost vs. capability, etc.).
-5. STRATEGIC TAKEAWAYS ARE ACTIONABLE. Concrete principles tied to evidence beat platitudes. "Position the product as enhancing existing skill rather than replacing it" beats "consider the audience".
-6. PROFESSIONAL TONE. Formal but readable. No marketing language. No hedging with "perhaps" or "it seems". Direct analytical claims.
-7. ADAPT SECTION HEADERS to what's being tested. If testing taglines: "Detailed Tagline Analysis". If testing feature concepts: "Detailed Feature Analysis". If testing pricing models: "Detailed Pricing Analysis". Use the variant label from the instrument.
+1. LET THE DATA LEAD. If there is no clear winner, say that explicitly. Do not force narratives the data doesn't support.
+2. USE EXACT NUMBERS. Every claim references specific respondent counts, percentages, ratings. "Several respondents" → unacceptable. "10 respondents (16%)" → required.
+3. QUOTE RESPONDENTS DIRECTLY. Quotes are real quotes from the panel, not paraphrases. They feel like real people — colloquial, specific.
+4. IDENTIFY TENSIONS AND TRADE-OFFS in cross-thematic analysis (aspiration vs. clarity, simplicity vs. credibility, broad reach vs. targeted resonance).
+5. STRATEGIC TAKEAWAYS ARE ACTIONABLE. "Position the product as enhancing existing skill rather than replacing it" beats "consider the audience".
+6. PROFESSIONAL TONE. Formal but readable. No hedging with "perhaps" or "it seems". Direct analytical claims.
+7. ADAPT TO STUDY TYPE. The section headers, framing, and recommendation phrasing must fit what's actually being tested (taglines, features, flows, pricing, etc.).
 8. Always respond with valid JSON matching the specified schema.`;
 
 export function buildSynthesisPrompt(
@@ -427,7 +472,15 @@ export function buildSynthesisPrompt(
   if (hasVariants && method === "survey") {
     const variants = instrument.variants!.items;
     const variantLabel = instrument.variants!.label;
+    const interp = interpretation as Record<string, unknown>;
+    const successCriteria = (interp.successCriteria as string) ?? "Not specified";
+    const evaluationSubject = (interp.evaluationSubject as string) ?? variantLabel;
     return `Synthesize a formal concept-test research report from this synthetic panel data. The variant type being compared is "${variantLabel}".
+
+EVALUATION SUBJECT: ${evaluationSubject}
+SUCCESS CRITERIA (what 'good' looks like): ${successCriteria}
+
+WRITE FOR A PM WHO HAS TO MAKE A SHIP/NO-SHIP DECISION TOMORROW. Connect every finding to a concrete decision. Use the variant label "${variantLabel}" in section headers and analysis (e.g. "Detailed ${variantLabel} Analysis", "Cross-${variantLabel} Patterns", "Recommended ${variantLabel}").
 
 ORIGINAL CONTEXT:
 ${JSON.stringify(interpretation, null, 2)}
@@ -551,24 +604,33 @@ export function buildConfidencePrompt(
   primaryFindings: object,
   method: ResearchMethod,
   panelSize: number,
-  hypothesis: string
+  hypothesis: string,
+  studyType?: string
 ): string {
   return `Evaluate the following primary research findings and assign a confidence score.
 
 HYPOTHESIS BEING TESTED:
 ${hypothesis}
 
+STUDY TYPE: ${studyType ?? "general"}
 METHOD: ${method} | PANEL SIZE: ${panelSize} synthetic respondents
 
 PRIMARY FINDINGS:
 ${JSON.stringify(primaryFindings, null, 2)}
 
-Evaluate as an independent secondary analyst. Specifically check:
-1. Internal consistency — Do quantitative ratings align with qualitative themes? If a variant rates 3.9 but qualitative analysis is mostly negative, flag the inconsistency.
-2. Face validity — Do findings align with what's known about the target market and domain? Apply general knowledge about how the audience and context typically behave.
-3. Bias risks — What biases might synthetic LLM-generated research introduce? (over-positivity, language model preferences, demographic stereotyping, missing edge cases, hallucinated specifics)
-4. Signal strength — How definitive are the findings? Strong patterns or mostly noise?
-5. Gaps — Important questions that remain unanswered.
+Score these FOUR dimensions (each 0-100, equally weighted in the final score):
+
+1. INTERNAL CONSISTENCY — Do quantitative ratings match qualitative themes? If a variant rates 3.9 but qualitative analysis is mostly negative, that's an inconsistency. Strong = quant and qual tell the same story.
+
+2. CROSS-PERSONA STABILITY — Do findings hold across persona segments, or are they driven by one outlier cluster? Strong = pattern is consistent across cohorts.
+
+3. SECONDARY ALIGNMENT — Do findings align with what's known about this market/domain from general knowledge? Strong = corroborated by typical behavior of the audience.
+
+4. METHODOLOGICAL FIT — Is the method appropriate for what was tested? Don't penalize a tagline study for not measuring price sensitivity. Don't penalize a feature assessment for not measuring positioning. Match method-fit to study type.
+
+CRITICAL: Do NOT score on dimensions irrelevant to this study type. Tagline study → no price-sensitivity penalty. Feature assessment → no competitive-positioning penalty.
+
+Apply general knowledge appropriately. Bias risks of synthetic research: over-positivity, language model preferences, demographic stereotyping, missing edge cases, hallucinated specifics.
 
 Return JSON:
 {

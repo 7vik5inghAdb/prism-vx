@@ -13,6 +13,7 @@ export async function POST(req: NextRequest) {
       method: ResearchMethod;
       panelSize: number;
       hypothesis: string;
+      studyType?: string;
     };
 
     if (!body.primaryFindings || !body.method || !body.hypothesis) {
@@ -23,7 +24,8 @@ export async function POST(req: NextRequest) {
       body.primaryFindings,
       body.method,
       body.panelSize,
-      body.hypothesis
+      body.hypothesis,
+      body.studyType
     );
 
     const response = await callLLM({

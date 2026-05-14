@@ -90,6 +90,7 @@ export function Step5Report() {
           method: selectedMethod,
           panelSize: respondents.length,
           hypothesis: interpretation.restatedHypothesis,
+          studyType: interpretation.studyType,
         }),
       });
       const confData = await confRes.json();

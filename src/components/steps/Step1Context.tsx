@@ -37,7 +37,9 @@ interface FormErrors {
 
 const DEMO_DEFAULTS: ResearchContext = {
   hypothesis:
-    "Adobe Express India is exploring a variety of taglines to find what resonates the most with people who have light creative design needs. We want to identify the most effective messaging strategy that balances broad appeal, emotional resonance, and a compelling value proposition.",
+    "A tagline that combines emotional resonance (pride, empowerment) with practical clarity (ease, accessibility) will outperform purely aspirational or purely functional taglines for Adobe Express India.",
+  researchQuestion:
+    "Which tagline messaging strategy for Adobe Express India best balances broad appeal, emotional resonance, and a compelling value proposition across our four primary audience cohorts?",
   productDescription:
     "Adobe Express — a consumer-facing creative design tool for people with light creative needs. Competing primarily with Canva (92% adoption in target audience), Capcut (49%), and Adobe Photoshop (55%). Current Adobe Express adoption in target market is 25%.",
   targetAudience:
@@ -55,6 +57,7 @@ Empowering Indians to design`,
 
 const EMPTY_FORM: ResearchContext = {
   hypothesis: "",
+  researchQuestion: "",
   productDescription: "",
   targetAudience: "",
   objectives: "",
@@ -299,35 +302,45 @@ function ContextForm({
   isLoading: boolean;
 }) {
   function field(
-    key: "hypothesis" | "productDescription" | "targetAudience" | "objectives",
+    key:
+      | "hypothesis"
+      | "researchQuestion"
+      | "productDescription"
+      | "targetAudience"
+      | "objectives",
     label: string,
     hint: string,
     placeholder: string,
-    minRows = 3
+    minRows = 3,
+    required = true
   ) {
     return (
       <div>
         <label className="text-[11px] font-bold text-ink-mid mb-0.5 block">
-          {label} <span className="text-scarlet/80">*</span>
+          {label}{" "}
+          {required && <span className="text-scarlet/80">*</span>}
         </label>
         <p className="text-[10px] text-ink-low mb-1.5 leading-snug">{hint}</p>
         <AutoTextarea
-          value={form[key]}
+          value={(form[key] as string) ?? ""}
           onChange={(e) => {
             const v = e.target.value;
             setForm((f) => ({ ...f, [key]: v }));
-            if (errors[key]) setErrors((er) => ({ ...er, [key]: undefined }));
+            if (errors[key as keyof FormErrors])
+              setErrors((er) => ({ ...er, [key]: undefined }));
           }}
           placeholder={placeholder}
           minRows={minRows}
           maxRows={40}
           className={cn(
             "w-full px-2.5 py-2 text-[13px] border rounded-md bg-bg-deep text-ink-high placeholder-ink-dim leading-relaxed",
-            errors[key] ? "border-scarlet/40" : "border-line"
+            errors[key as keyof FormErrors] ? "border-scarlet/40" : "border-line"
           )}
         />
-        {errors[key] && (
-          <p className="text-[10px] text-scarlet mt-0.5">{errors[key]}</p>
+        {errors[key as keyof FormErrors] && (
+          <p className="text-[10px] text-scarlet mt-0.5">
+            {errors[key as keyof FormErrors]}
+          </p>
         )}
       </div>
     );
@@ -360,8 +373,16 @@ function ContextForm({
       {field(
         "hypothesis",
         "Research Hypothesis",
-        "The core assumption you're trying to validate",
-        "What do you believe to be true that needs evidence?"
+        "What you BELIEVE to be true (the assumption you're testing)",
+        "e.g., Hindi taglines will resonate more with Indian users than English taglines"
+      )}
+      {field(
+        "researchQuestion",
+        "Research Question",
+        "What you want to LEARN from this research",
+        "e.g., Which tagline messaging strategy best balances appeal, resonance, and value proposition?",
+        2,
+        false
       )}
       {field(
         "productDescription",
@@ -608,7 +629,7 @@ export function Step1Context() {
 
                 <div>
                   <p className="text-[10px] font-bold text-ink-low uppercase tracking-widest mb-1">
-                    Hypothesis
+                    Hypothesis (Belief)
                   </p>
                   <EditableText
                     value={interpretation.restatedHypothesis}
@@ -620,6 +641,55 @@ export function Step1Context() {
                     textClassName="text-xs"
                   />
                 </div>
+
+                {interpretation.restatedResearchQuestion && (
+                  <div>
+                    <p className="text-[10px] font-bold text-ink-low uppercase tracking-widest mb-1">
+                      Research Question (What we want to learn)
+                    </p>
+                    <EditableText
+                      value={interpretation.restatedResearchQuestion}
+                      onSave={(v) =>
+                        updateInterpretation({ restatedResearchQuestion: v })
+                      }
+                      multiline
+                      rows={2}
+                      textClassName="text-xs"
+                    />
+                  </div>
+                )}
+
+                {interpretation.evaluationSubject && (
+                  <div className="bg-sky/10 border border-sky/30 rounded-lg p-2.5">
+                    <p className="text-[10px] font-bold text-sky uppercase tracking-widest mb-1">
+                      Evaluation Subject
+                    </p>
+                    <EditableText
+                      value={interpretation.evaluationSubject}
+                      onSave={(v) =>
+                        updateInterpretation({ evaluationSubject: v })
+                      }
+                      multiline
+                      textClassName="text-xs text-sky"
+                    />
+                  </div>
+                )}
+
+                {interpretation.successCriteria && (
+                  <div className="bg-yellow/10 border border-yellow/30 rounded-lg p-2.5">
+                    <p className="text-[10px] font-bold text-yellow uppercase tracking-widest mb-1">
+                      Success Criteria
+                    </p>
+                    <EditableText
+                      value={interpretation.successCriteria}
+                      onSave={(v) =>
+                        updateInterpretation({ successCriteria: v })
+                      }
+                      multiline
+                      textClassName="text-xs text-yellow/90"
+                    />
+                  </div>
+                )}
 
                 <div>
                   <p className="text-[10px] font-bold text-ink-low uppercase tracking-widest mb-1">
@@ -675,7 +745,9 @@ export function Step1Context() {
                   </ul>
                 </div>
 
-                {interpretation.studyType === "concept_test" &&
+                {(interpretation.studyType === "concept_test" ||
+                  interpretation.studyType === "variant_comparison" ||
+                  interpretation.studyType === "positioning_test") &&
                   interpretation.variants && (
                     <div className="bg-yellow/10 border border-yellow/30 rounded-lg p-2.5">
                       <p className="text-[10px] font-bold text-yellow uppercase tracking-widest mb-1">

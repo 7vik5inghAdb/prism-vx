@@ -5,12 +5,25 @@ import { z } from "zod";
 export const OrchestratorInterpretationSchema = z.object({
   summary: z.string().min(10),
   restatedHypothesis: z.string().min(10),
+  restatedResearchQuestion: z.string().optional(),
   restatedProduct: z.string().min(5),
   restatedAudience: z.string().min(5),
   restatedObjectives: z.array(z.string()).min(1).max(6),
   researchFocus: z.string().min(10),
   potentialChallenges: z.array(z.string()).max(4),
-  studyType: z.enum(["concept_test", "attitudinal", "behavioral", "exploratory"]),
+  studyType: z.enum([
+    "concept_test",
+    "attitudinal",
+    "behavioral",
+    "exploratory",
+    "variant_comparison",
+    "concept_validation",
+    "workflow_evaluation",
+    "feature_assessment",
+    "positioning_test",
+  ]),
+  evaluationSubject: z.string().optional(),
+  successCriteria: z.string().optional(),
   variants: z
     .object({
       label: z.string(),

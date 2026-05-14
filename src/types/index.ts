@@ -21,6 +21,8 @@ export interface Attachment {
 
 export interface ResearchContext {
   hypothesis: string;
+  // What the PM wants to learn (distinct from the hypothesis they hold)
+  researchQuestion?: string;
   productDescription: string;
   targetAudience: string;
   objectives: string;
@@ -34,12 +36,26 @@ export interface ResearchContext {
 export interface OrchestratorInterpretation {
   summary: string;
   restatedHypothesis: string;
+  restatedResearchQuestion?: string;
   restatedProduct: string;
   restatedAudience: string;
   restatedObjectives: string[];
   researchFocus: string;
   potentialChallenges: string[];
-  studyType: "concept_test" | "attitudinal" | "behavioral" | "exploratory";
+  studyType:
+    | "concept_test"
+    | "attitudinal"
+    | "behavioral"
+    | "exploratory"
+    | "variant_comparison"
+    | "concept_validation"
+    | "workflow_evaluation"
+    | "feature_assessment"
+    | "positioning_test";
+  // What's being tested (a tagline, a feature, a flow, a price model, etc.)
+  evaluationSubject?: string;
+  // What "good" looks like for this study
+  successCriteria?: string;
   variants?: { label: string; items: string[] };
 }
 

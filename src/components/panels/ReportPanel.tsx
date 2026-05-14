@@ -124,12 +124,42 @@ export function ReportPanel() {
                 <div className="space-y-3">
                   <div className="neu-card-sm rounded-lg p-3">
                     <p className="text-[10px] font-semibold text-ink-low uppercase tracking-wider mb-1">
-                      Hypothesis
+                      Hypothesis (Belief)
                     </p>
                     <p className="text-xs text-ink-mid leading-relaxed">
                       {interpretation.restatedHypothesis}
                     </p>
                   </div>
+                  {interpretation.restatedResearchQuestion && (
+                    <div className="neu-card-sm rounded-lg p-3">
+                      <p className="text-[10px] font-semibold text-ink-low uppercase tracking-wider mb-1">
+                        Research Question
+                      </p>
+                      <p className="text-xs text-ink-mid leading-relaxed">
+                        {interpretation.restatedResearchQuestion}
+                      </p>
+                    </div>
+                  )}
+                  {interpretation.evaluationSubject && (
+                    <div className="bg-sky/10 border border-sky/30 rounded-lg p-3">
+                      <p className="text-[10px] font-bold text-sky uppercase tracking-wider mb-1">
+                        Evaluation Subject
+                      </p>
+                      <p className="text-xs text-sky leading-relaxed">
+                        {interpretation.evaluationSubject}
+                      </p>
+                    </div>
+                  )}
+                  {interpretation.successCriteria && (
+                    <div className="bg-yellow/10 border border-yellow/30 rounded-lg p-3">
+                      <p className="text-[10px] font-bold text-yellow uppercase tracking-wider mb-1">
+                        Success Criteria
+                      </p>
+                      <p className="text-xs text-yellow/90 leading-relaxed">
+                        {interpretation.successCriteria}
+                      </p>
+                    </div>
+                  )}
                   <div className="neu-card-sm rounded-lg p-3">
                     <p className="text-[10px] font-semibold text-ink-low uppercase tracking-wider mb-1">
                       Research Focus

@@ -71,9 +71,26 @@ function Step1Detail() {
   return (
     <div className="space-y-3">
       <LabelBlock label="Summary">{interpretation.summary}</LabelBlock>
-      <LabelBlock label="Hypothesis">
+      <LabelBlock label="Hypothesis (Belief)">
         {interpretation.restatedHypothesis}
       </LabelBlock>
+      {interpretation.restatedResearchQuestion && (
+        <LabelBlock label="Research Question">
+          {interpretation.restatedResearchQuestion}
+        </LabelBlock>
+      )}
+      {interpretation.evaluationSubject && (
+        <LabelBlock label="Evaluation Subject">
+          <span className="text-sky">{interpretation.evaluationSubject}</span>
+        </LabelBlock>
+      )}
+      {interpretation.successCriteria && (
+        <LabelBlock label="Success Criteria">
+          <span className="text-yellow/90">
+            {interpretation.successCriteria}
+          </span>
+        </LabelBlock>
+      )}
       <LabelBlock label="Product / Feature">
         {interpretation.restatedProduct}
       </LabelBlock>
@@ -112,7 +129,9 @@ function Step1Detail() {
           </ul>
         </LabelBlock>
       )}
-      {interpretation.studyType === "concept_test" &&
+      {(interpretation.studyType === "concept_test" ||
+        interpretation.studyType === "variant_comparison" ||
+        interpretation.studyType === "positioning_test") &&
         interpretation.variants && (
           <LabelBlock label={`Variants (${interpretation.variants.label})`}>
             <ul className="space-y-1">
