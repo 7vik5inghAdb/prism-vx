@@ -47,6 +47,30 @@ const PersonaClusterSchema = z.object({
   dimensions: z.array(PersonaDimensionSchema).min(2).max(6),
   narrativeProfile: z.string().min(20),
   sampleSize: z.number().int().min(1).max(99),
+  validationPredispositions: z
+    .object({
+      adoptionPosture: z.enum([
+        "Innovator",
+        "Early Adopter",
+        "Pragmatist",
+        "Skeptic",
+        "Laggard",
+      ]),
+      riskTolerance: z.enum(["Low", "Medium", "High"]),
+      switchingCost: z.enum(["Low", "Medium", "High"]),
+      counterfactual: z.string().min(5),
+      acceptanceCriteria: z.string().min(5),
+      rejectionTriggers: z.string().min(5),
+      habitStrength: z.enum(["Weak", "Moderate", "Strong"]),
+    })
+    .optional(),
+  jobsToBeDone: z
+    .object({
+      functional: z.string().min(10),
+      emotional: z.string().min(5),
+      social: z.string().min(5),
+    })
+    .optional(),
 });
 
 export const PersonasSchema = z.object({

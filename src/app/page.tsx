@@ -7,6 +7,7 @@ import { ConversationPanel } from "@/components/panels/ConversationPanel";
 import { PipelineTracker } from "@/components/panels/PipelineTracker";
 import { SavedRunsModal } from "@/components/conversation/SavedRunsModal";
 import { SaveRunDialog } from "@/components/conversation/SaveRunDialog";
+import { ResumeBanner } from "@/components/conversation/ResumeBanner";
 import {
   RefreshCwIcon,
   FolderOpen,
@@ -147,6 +148,7 @@ export default function Home() {
 
       <SavedRunsModal open={savedOpen} onClose={() => setSavedOpen(false)} />
       <SaveRunDialog open={saveOpen} onClose={() => setSaveOpen(false)} />
+      <ResumeBanner />
     </div>
   );
 }

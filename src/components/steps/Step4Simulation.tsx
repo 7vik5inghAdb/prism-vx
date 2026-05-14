@@ -97,37 +97,60 @@ export function Step4Simulation() {
         phase: "simulating",
       });
 
-      try {
-        const res = await fetch("/api/simulate", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            method: "survey",
-            personas,
-            instrument,
-            batchIndex,
-            panelSize: total,
-          }),
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "Batch failed");
+      // Try this batch, then retry once on failure before giving up on it
+      let batchSucceeded = false;
+      let lastErr: unknown = null;
+      for (let attempt = 0; attempt < 2 && !batchSucceeded; attempt++) {
+        try {
+          const res = await fetch("/api/simulate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              method: "survey",
+              personas,
+              instrument,
+              batchIndex,
+              panelSize: total,
+            }),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || "Batch failed");
 
-        const newOnes = data.respondents as SurveyRespondent[];
-        collected.push(...newOnes);
-        appendStreamingRespondents(newOnes);
+          const newOnes = data.respondents as SurveyRespondent[];
+          collected.push(...newOnes);
+          appendStreamingRespondents(newOnes);
+          // Persist partial progress as we go so a later crash doesn't lose it
+          setPanelResults({ method: "survey", respondents: [...collected] });
 
-        setSimulationProgress({
-          current: Math.min(collected.length, total),
-          total,
-          currentBatch: label,
-          phase: "simulating",
-        });
-      } catch (err) {
-        setError(
-          err instanceof Error
-            ? `Batch ${batchIndex + 1} failed: ${err.message}`
-            : "Batch failed"
-        );
+          setSimulationProgress({
+            current: Math.min(collected.length, total),
+            total,
+            currentBatch: label,
+            phase: "simulating",
+          });
+          batchSucceeded = true;
+        } catch (err) {
+          lastErr = err;
+          if (attempt === 0) {
+            // wait then retry once
+            await new Promise((r) => setTimeout(r, 2000));
+          }
+        }
+      }
+
+      if (!batchSucceeded) {
+        // Surface partial-results UI: keep what we have, let the PM decide
+        const partialMsg =
+          lastErr instanceof Error
+            ? `Batch ${batchIndex + 1} failed after retry: ${lastErr.message}`
+            : `Batch ${batchIndex + 1} failed after retry`;
+        if (collected.length > 0) {
+          setError(
+            `${partialMsg}. ${collected.length}/${total} respondents captured. Click retry to resume, or continue with partial results.`
+          );
+        } else {
+          setError(partialMsg);
+        }
         setLoading(false);
         return;
       }
@@ -262,24 +285,55 @@ export function Step4Simulation() {
             <Message variant="orchestrator">
               <div className="flex items-start gap-2 text-scarlet">
                 <AlertCircleIcon className="w-4 h-4 mt-0.5" />
-                <div>
+                <div className="flex-1">
                   <p className="text-sm font-semibold mb-1">
                     Simulation hit a snag.
                   </p>
                   <p className="text-xs mb-2">{error}</p>
-                  <button
-                    onClick={() => {
-                      retryCurrentStep();
-                      hasStarted.current = false;
-                      setPanelResults(null);
-                      setSimulationProgress(null);
-                      resetStreamingRespondents();
-                      setStage("configure");
-                    }}
-                    className="text-xs text-white bg-scarlet hover:bg-scarlet/80 px-3 py-1 rounded flex items-center gap-1"
-                  >
-                    <RefreshCwIcon className="w-3 h-3" /> Retry
-                  </button>
+                  {streamingRespondents.length > 0 && (
+                    <div className="text-[11px] text-ink-mid mb-2 neu-pill px-2 py-1 rounded inline-block">
+                      ✓ {streamingRespondents.length} respondents captured —
+                      your progress is saved.
+                    </div>
+                  )}
+                  <div className="flex flex-wrap gap-1.5 mt-1">
+                    <button
+                      onClick={() => {
+                        retryCurrentStep();
+                        hasStarted.current = false;
+                        setPanelResults(null);
+                        setSimulationProgress(null);
+                        resetStreamingRespondents();
+                        setStage("configure");
+                      }}
+                      className="text-xs text-white bg-scarlet hover:bg-scarlet/80 px-3 py-1 rounded flex items-center gap-1"
+                    >
+                      <RefreshCwIcon className="w-3 h-3" />
+                      Restart from configure
+                    </button>
+                    {streamingRespondents.length > 0 && (
+                      <button
+                        onClick={() => {
+                          // Proceed with whatever we have
+                          setPanelResults({
+                            method: "survey",
+                            respondents:
+                              streamingRespondents as SurveyRespondent[],
+                          });
+                          setSimulationProgress({
+                            current: streamingRespondents.length,
+                            total: streamingRespondents.length,
+                            phase: "complete",
+                          });
+                          setStage("complete");
+                          setError(null);
+                        }}
+                        className="text-xs neu-button-primary px-3 py-1 rounded flex items-center gap-1"
+                      >
+                        Continue with {streamingRespondents.length} respondents →
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             </Message>

@@ -67,6 +67,29 @@ export interface PersonaDimension {
   values: string[];
 }
 
+// L2 — Validation Predispositions: what kind of evaluator this cluster is
+export interface ValidationPredispositions {
+  adoptionPosture:
+    | "Innovator"
+    | "Early Adopter"
+    | "Pragmatist"
+    | "Skeptic"
+    | "Laggard";
+  riskTolerance: "Low" | "Medium" | "High";
+  switchingCost: "Low" | "Medium" | "High";
+  counterfactual: string; // what they do TODAY instead of using this thing
+  acceptanceCriteria: string; // what signals "yes"
+  rejectionTriggers: string; // what signals "no"
+  habitStrength: "Weak" | "Moderate" | "Strong";
+}
+
+// L3 — Jobs-to-be-Done: situation → motivation → outcome
+export interface JobsToBeDone {
+  functional: string; // "When [situation], I want to [motivation], so I can [outcome]"
+  emotional: string; // emotional payoff (feel competent, secure, in-control)
+  social: string; // social payoff (look professional, fit in, stand out)
+}
+
 export interface PersonaCluster {
   id: string;
   name: string;
@@ -74,6 +97,9 @@ export interface PersonaCluster {
   dimensions: PersonaDimension[];
   narrativeProfile: string;
   sampleSize: number; // suggested share of panel
+  // L2 + L3 (optional for backward compat with persisted state)
+  validationPredispositions?: ValidationPredispositions;
+  jobsToBeDone?: JobsToBeDone;
 }
 
 // ── Step 3 ────────────────────────────────────────────────────────────────────
@@ -280,6 +306,9 @@ export interface AppState {
 
   // Streaming respondents (populated during step 4)
   streamingRespondents: (SurveyRespondent | InterviewRespondent)[];
+
+  // Autosave timestamp (ISO string)
+  autosavedAt: string | null;
 }
 
 export interface StepInfo {

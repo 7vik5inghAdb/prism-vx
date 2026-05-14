@@ -1,6 +1,7 @@
 "use client";
 
 import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
 import type {
   AppState,
   Step,
@@ -97,6 +98,7 @@ const initialState: AppState = {
   surveyPanelSize: 100,
   interviewPanelSize: 3,
   streamingRespondents: [],
+  autosavedAt: null,
 };
 
 const initialRunState = {
@@ -106,7 +108,9 @@ const initialRunState = {
   expandedReviewStep: null as Step | null,
 };
 
-export const useAppStore = create<AppStore>((set, get) => ({
+export const useAppStore = create<AppStore>()(
+  persist(
+    (set, get) => ({
   ...initialState,
   ...initialRunState,
 
@@ -196,5 +200,62 @@ export const useAppStore = create<AppStore>((set, get) => ({
   },
 
   resetAll: () =>
-    set({ ...initialState, ...initialRunState, streamingRespondents: [] }),
-}));
+    set({
+      ...initialState,
+      ...initialRunState,
+      streamingRespondents: [],
+      autosavedAt: null,
+    }),
+}),
+    {
+      name: "prism_autosave_v1",
+      storage: createJSONStorage(() => localStorage),
+      // Persist everything except transient UI state
+      partialize: (state) => ({
+        currentStep: state.currentStep,
+        stepStatuses: state.stepStatuses,
+        context: state.context,
+        interpretation: state.interpretation,
+        personas: state.personas,
+        selectedMethod: state.selectedMethod,
+        instrument: state.instrument,
+        panelResults: state.panelResults,
+        report: state.report,
+        surveyPanelSize: state.surveyPanelSize,
+        interviewPanelSize: state.interviewPanelSize,
+        streamingRespondents: state.streamingRespondents,
+        currentRunId: state.currentRunId,
+        currentRunName: state.currentRunName,
+        pipelineOpen: state.pipelineOpen,
+        autosavedAt: state.autosavedAt,
+      }),
+      // Mark autosave timestamp on every persisted write
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          // No-op: zustand auto-rehydrates. The timestamp is set on writes via the
+          // wrapper below.
+        }
+      },
+    }
+  )
+);
+
+// Stamp the autosave timestamp on every state change that includes real progress.
+if (typeof window !== "undefined") {
+  let lastStamp = 0;
+  useAppStore.subscribe((state) => {
+    const hasProgress =
+      state.context !== null ||
+      state.currentStep > 1 ||
+      state.streamingRespondents.length > 0;
+    if (!hasProgress) return;
+    const now = Date.now();
+    // Throttle: stamp at most every 2 seconds
+    if (now - lastStamp < 2000) return;
+    lastStamp = now;
+    const ts = new Date().toISOString();
+    if (state.autosavedAt !== ts) {
+      useAppStore.setState({ autosavedAt: ts });
+    }
+  });
+}

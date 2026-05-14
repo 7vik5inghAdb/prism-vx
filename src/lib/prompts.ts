@@ -133,7 +133,12 @@ Each cluster should have 3-5 dimensions appropriate to the domain. Pick dimensio
 
 Choose what's actually relevant — don't force unrelated dimensions in.
 
-Return a JSON object with this schema:
+Return a JSON object with this schema. Each cluster gets THREE layers:
+
+L1 (Core): identity & dimensions
+L2 (Validation Predispositions): what kind of EVALUATOR this cluster is — drives how they react to research stimuli
+L3 (Jobs-to-be-Done): the underlying jobs they hire products for
+
 {
   "clusters": [
     {
@@ -143,18 +148,35 @@ Return a JSON object with this schema:
       "dimensions": [
         { "name": "Dimension name", "description": "why this matters", "values": ["value 1", "value 2", "value 3"] }
       ],
-      "narrativeProfile": "2-3 sentence narrative describing a representative member: what they do, what they care about, what tools they currently use, how they'd approach this product",
-      "sampleSize": 50
+      "narrativeProfile": "2-3 sentence narrative of a representative member: what they do, what they care about, what tools they currently use, how they'd approach this product",
+      "sampleSize": 50,
+      "validationPredispositions": {
+        "adoptionPosture": "Innovator | Early Adopter | Pragmatist | Skeptic | Laggard",
+        "riskTolerance": "Low | Medium | High",
+        "switchingCost": "Low | Medium | High",
+        "counterfactual": "What this cluster does TODAY instead of using the product — the thing the new option must beat",
+        "acceptanceCriteria": "What signals 'yes, this is for me' (e.g. 'saves 30+ min', 'feels professional', 'my friends would react well')",
+        "rejectionTriggers": "What signals 'no' (e.g. 'looks like a cliché', 'feels patronizing', 'too much learning curve')",
+        "habitStrength": "Weak | Moderate | Strong"
+      },
+      "jobsToBeDone": {
+        "functional": "When [situation], I want to [motivation], so I can [outcome]",
+        "emotional": "Emotional payoff in one phrase (e.g. 'feel competent', 'feel in control')",
+        "social": "Social payoff in one phrase (e.g. 'look professional to clients', 'fit in with peers')"
+      }
     }
   ]
 }
 
-Requirements:
+REQUIREMENTS:
 - 3-5 clusters total
 - Each cluster has 3-5 dimensions
 - sampleSize values across all clusters MUST sum to 100
-- Make dimensions specific and research-relevant
-- Clusters must be meaningfully distinct from each other`;
+- DIVERSE adoption postures: don't make every cluster a Pragmatist. Mix in some Skeptics and Laggards.
+- At least 30% of clusters (by sampleSize share) should have predispositions that suggest RESISTANCE or INDIFFERENCE — these are the hard-to-convert users real research surfaces. Do NOT make personas that conveniently align with the product's value prop.
+- counterfactual is the MOST IMPORTANT L2 attribute — it anchors what any new option must beat.
+- L3 jobs should be domain-specific and concrete. NOT generic ("I want a good product"). Make them specific.
+- Clusters must be meaningfully distinct from each other.`;
 }
 
 // ── Step 3: Instrument Generation ────────────────────────────────────────────
@@ -378,12 +400,15 @@ Return a JSON array:
   }
 ]
 
-CRITICAL:
+CRITICAL FORMAT RULES:
 - For Likert: answer must be one of the exact scale labels
 - For Rating: answer must be a number within the specified range
-- For Open-ended: substantive (3-6 sentences), in the respondent's voice, culturally specific
+- For Open-ended PER-VARIANT: 20-60 words MAX. Not an essay — real survey respondents are brief.
+- For Open-ended CROSS-VARIANT (no variantId): 30-80 words MAX.
+- Some respondents may give 5-10 word answers. That's realistic. Do not pad.
 - Each respondent's answers must be consistent with their persona AND meaningfully different from other respondents
-- Open-ended answers must include real specifics from the persona's life (tools, places, frustrations, reference points) — not generic responses`;
+- Open-ended answers must include real specifics from the persona's life (tools, places, frustrations, reference points)
+- DO NOT repeat the variant text back at length. Reference it briefly ("the 'Magic of design' one") and react.`;
 }
 
 function formatQuestion(q: Question): string {

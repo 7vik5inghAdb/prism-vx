@@ -28,13 +28,26 @@ function generateRespondentProfile(
   cluster: PersonaCluster,
   index: number
 ): string {
+  // Compact profile: max ~80 words. Saves tokens dramatically over verbose dumps.
   const dimNotes = cluster.dimensions
     .map((d) => {
       const val = d.values[index % d.values.length];
-      return `${d.name}: ${val}`;
+      return `${d.name}=${val}`;
     })
-    .join(", ");
-  return `${cluster.narrativeProfile}\n\nSpecific attributes: ${dimNotes}`;
+    .join(" · ");
+
+  const vp = cluster.validationPredispositions;
+  const jtbd = cluster.jobsToBeDone;
+
+  const vpLine = vp
+    ? `\n${vp.adoptionPosture} · risk:${vp.riskTolerance} · switching:${vp.switchingCost} · habit:${vp.habitStrength}. Today does: ${vp.counterfactual}. Says YES when: ${vp.acceptanceCriteria}. Says NO when: ${vp.rejectionTriggers}.`
+    : "";
+
+  const jtbdLine = jtbd
+    ? `\nJob: ${jtbd.functional} (emotional: ${jtbd.emotional}; social: ${jtbd.social})`
+    : "";
+
+  return `${cluster.narrativeProfile}\nAttrs: ${dimNotes}${vpLine}${jtbdLine}`;
 }
 
 export async function POST(req: NextRequest) {

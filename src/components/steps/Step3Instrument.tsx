@@ -52,10 +52,30 @@ function QuestionRow({
           >
             {style.label}
           </span>
-          {question.perVariant && variantsLabel && (
-            <span className="text-[8px] font-bold px-1.5 py-0.5 rounded bg-yellow/10 text-yellow">
-              PER {variantsLabel.toUpperCase()}
-            </span>
+          {variantsLabel && (
+            <button
+              onClick={() =>
+                onUpdate({
+                  ...question,
+                  perVariant: !question.perVariant,
+                } as Question)
+              }
+              className={cn(
+                "text-[8px] font-bold px-1.5 py-0.5 rounded transition-all hover:scale-105",
+                question.perVariant
+                  ? "bg-magenta/15 text-magenta border border-magenta/40"
+                  : "neu-pill text-ink-low"
+              )}
+              title={
+                question.perVariant
+                  ? `Asked once per ${variantsLabel.toLowerCase()} — click to make cross-${variantsLabel.toLowerCase()}`
+                  : `Asked once total — click to make per-${variantsLabel.toLowerCase()}`
+              }
+            >
+              {question.perVariant
+                ? `PER-${variantsLabel.toUpperCase()}`
+                : `CROSS-${variantsLabel.toUpperCase()}`}
+            </button>
           )}
           {question.type === "rating" && (
             <span className="text-[9px] text-ink-low">
@@ -76,6 +96,56 @@ function QuestionRow({
       >
         <X className="w-3 h-3" />
       </button>
+    </div>
+  );
+}
+
+function QuestionCountGuardrail({
+  instrument,
+}: {
+  instrument: import("@/types").ResearchInstrument;
+}) {
+  const perVariantCount = instrument.questions.filter((q) => q.perVariant).length;
+  const crossCount = instrument.questions.length - perVariantCount;
+  const variantCount = instrument.variants?.items.length ?? 1;
+  const totalAsked = perVariantCount * variantCount + crossCount;
+  const SOFT_CAP = 30;
+  const overCap = totalAsked > SOFT_CAP;
+
+  if (!instrument.variants) {
+    // Non-variant studies — just show count
+    return (
+      <div className="bg-bg-deep/40 border-b border-line px-4 py-1.5 text-[10px] text-ink-low">
+        {instrument.questions.length} total questions per respondent
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className={cn(
+        "px-4 py-2 border-b border-line text-[11px] flex items-start gap-2",
+        overCap
+          ? "bg-yellow/10 border-yellow/30 text-yellow"
+          : "bg-bg-deep/40 text-ink-mid"
+      )}
+    >
+      {overCap && <span className="text-yellow flex-shrink-0">⚠</span>}
+      <div className="flex-1">
+        <span className="font-semibold">
+          {perVariantCount} per-{instrument.variants.label.toLowerCase()} × {variantCount} {instrument.variants.label.toLowerCase()}s
+          {crossCount > 0 ? ` + ${crossCount} cross-${instrument.variants.label.toLowerCase()}` : ""}
+          {" = "}
+          <span className={overCap ? "text-yellow" : "text-magenta"}>
+            {totalAsked} questions per respondent
+          </span>
+        </span>
+        {overCap && (
+          <p className="text-[10px] mt-0.5 leading-snug opacity-90">
+            Above the recommended max of {SOFT_CAP}. Long instruments slow simulation and risk batch timeouts. Consider moving a per-{instrument.variants.label.toLowerCase()} question to cross-{instrument.variants.label.toLowerCase()}, or deleting one.
+          </p>
+        )}
+      </div>
     </div>
   );
 }
@@ -321,6 +391,9 @@ export function Step3Instrument() {
                     {instrument.rationale}
                   </p>
                 </div>
+
+                <QuestionCountGuardrail instrument={instrument} />
+
 
                 <div className="max-h-72 overflow-y-auto">
                   {instrument.questions.map((q, i) => (

@@ -216,8 +216,196 @@ function PersonaCard({
               ))}
             </div>
           </div>
+
+          {/* L2 — Validation Predispositions */}
+          {cluster.validationPredispositions && (
+            <details className="bg-bg-deep/50 rounded-md overflow-hidden">
+              <summary className="px-2 py-1.5 cursor-pointer hover:bg-bg-elevated/40 transition-colors">
+                <span
+                  className={cn(
+                    "text-[9px] font-bold uppercase tracking-widest",
+                    c.text
+                  )}
+                >
+                  L2 · Validation Predispositions
+                </span>
+                <span className="text-[9px] opacity-60 ml-2">
+                  {cluster.validationPredispositions.adoptionPosture}
+                </span>
+              </summary>
+              <div className="px-2 pb-2 space-y-1.5 pt-1">
+                <div className="grid grid-cols-2 gap-1 text-[10px]">
+                  <PredispositionPill
+                    label="Adoption"
+                    value={cluster.validationPredispositions.adoptionPosture}
+                  />
+                  <PredispositionPill
+                    label="Risk"
+                    value={cluster.validationPredispositions.riskTolerance}
+                  />
+                  <PredispositionPill
+                    label="Switching"
+                    value={cluster.validationPredispositions.switchingCost}
+                  />
+                  <PredispositionPill
+                    label="Habit"
+                    value={cluster.validationPredispositions.habitStrength}
+                  />
+                </div>
+                <div>
+                  <p className="text-[8.5px] font-bold uppercase tracking-widest opacity-60 mb-0.5">
+                    Counterfactual (does today)
+                  </p>
+                  <EditableText
+                    value={cluster.validationPredispositions.counterfactual}
+                    onSave={(v) =>
+                      onUpdate({
+                        ...cluster,
+                        validationPredispositions: {
+                          ...cluster.validationPredispositions!,
+                          counterfactual: v,
+                        },
+                      })
+                    }
+                    multiline
+                    textClassName="text-[10px] opacity-80"
+                  />
+                </div>
+                <div>
+                  <p className="text-[8.5px] font-bold uppercase tracking-widest text-sky mb-0.5">
+                    Says yes when
+                  </p>
+                  <EditableText
+                    value={cluster.validationPredispositions.acceptanceCriteria}
+                    onSave={(v) =>
+                      onUpdate({
+                        ...cluster,
+                        validationPredispositions: {
+                          ...cluster.validationPredispositions!,
+                          acceptanceCriteria: v,
+                        },
+                      })
+                    }
+                    multiline
+                    textClassName="text-[10px] text-sky"
+                  />
+                </div>
+                <div>
+                  <p className="text-[8.5px] font-bold uppercase tracking-widest text-scarlet mb-0.5">
+                    Says no when
+                  </p>
+                  <EditableText
+                    value={cluster.validationPredispositions.rejectionTriggers}
+                    onSave={(v) =>
+                      onUpdate({
+                        ...cluster,
+                        validationPredispositions: {
+                          ...cluster.validationPredispositions!,
+                          rejectionTriggers: v,
+                        },
+                      })
+                    }
+                    multiline
+                    textClassName="text-[10px] text-scarlet"
+                  />
+                </div>
+              </div>
+            </details>
+          )}
+
+          {/* L3 — Jobs-to-be-Done */}
+          {cluster.jobsToBeDone && (
+            <details className="bg-bg-deep/50 rounded-md overflow-hidden">
+              <summary className="px-2 py-1.5 cursor-pointer hover:bg-bg-elevated/40 transition-colors">
+                <span
+                  className={cn(
+                    "text-[9px] font-bold uppercase tracking-widest",
+                    c.text
+                  )}
+                >
+                  L3 · Jobs-to-be-Done
+                </span>
+              </summary>
+              <div className="px-2 pb-2 space-y-1.5 pt-1">
+                <div>
+                  <p className="text-[8.5px] font-bold uppercase tracking-widest text-magenta mb-0.5">
+                    Functional Job
+                  </p>
+                  <EditableText
+                    value={cluster.jobsToBeDone.functional}
+                    onSave={(v) =>
+                      onUpdate({
+                        ...cluster,
+                        jobsToBeDone: {
+                          ...cluster.jobsToBeDone!,
+                          functional: v,
+                        },
+                      })
+                    }
+                    multiline
+                    textClassName="text-[10px] opacity-90"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-1.5">
+                  <div>
+                    <p className="text-[8.5px] font-bold uppercase tracking-widest text-yellow mb-0.5">
+                      Emotional
+                    </p>
+                    <EditableText
+                      value={cluster.jobsToBeDone.emotional}
+                      onSave={(v) =>
+                        onUpdate({
+                          ...cluster,
+                          jobsToBeDone: {
+                            ...cluster.jobsToBeDone!,
+                            emotional: v,
+                          },
+                        })
+                      }
+                      textClassName="text-[10px] text-yellow/90"
+                    />
+                  </div>
+                  <div>
+                    <p className="text-[8.5px] font-bold uppercase tracking-widest text-harvest mb-0.5">
+                      Social
+                    </p>
+                    <EditableText
+                      value={cluster.jobsToBeDone.social}
+                      onSave={(v) =>
+                        onUpdate({
+                          ...cluster,
+                          jobsToBeDone: {
+                            ...cluster.jobsToBeDone!,
+                            social: v,
+                          },
+                        })
+                      }
+                      textClassName="text-[10px] text-harvest"
+                    />
+                  </div>
+                </div>
+              </div>
+            </details>
+          )}
         </div>
       )}
+    </div>
+  );
+}
+
+function PredispositionPill({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="neu-pill rounded px-1.5 py-1">
+      <p className="text-[8.5px] font-bold uppercase tracking-widest text-ink-low">
+        {label}
+      </p>
+      <p className="text-[10px] text-ink-mid font-semibold">{value}</p>
     </div>
   );
 }
