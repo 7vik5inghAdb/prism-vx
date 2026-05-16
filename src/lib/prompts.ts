@@ -29,16 +29,26 @@ Stay grounded in what the PM actually wrote. Do not assume any specific industry
 Always respond with valid JSON matching the specified schema.`;
 
 export function buildOrchestratorPrompt(ctx: ResearchContext): string {
-  const variantsHint = ctx.variants?.trim()
-    ? `\n\nThe PM has also provided VARIANTS to test (one per line):\n${ctx.variants}\nVariant label: ${ctx.variantsLabel || "Variant"}`
-    : "";
+  const typeLabel = ctx.variantTypeLabel || ctx.variantsLabel || "Variant";
+  const variantList = Array.isArray(ctx.variants) ? ctx.variants : [];
+  const variantsHint =
+    variantList.length > 0
+      ? `\n\nThe PM has provided ${variantList.length} ${typeLabel.toLowerCase()}${variantList.length === 1 ? "" : "s"} to test:\n${variantList
+          .map(
+            (v, i) =>
+              `${i + 1}. ${v.description}${v.image ? ` [+ image: ${v.image.name}]` : ""}`
+          )
+          .join(
+            "\n"
+          )}\nVariant type label: ${typeLabel}${variantList.some((v) => v.image) ? "\n(Some variants have visual content — personas will see the images during simulation.)" : ""}`
+      : "";
 
   // Attach extracted text from PDFs/DOCX/TXT attachments. Images are sent as
   // separate vision content blocks, so we only mention them by name here.
   const docs = (ctx.attachments || []).filter((a) => a.kind !== "image");
   const images = (ctx.attachments || []).filter((a) => a.kind === "image");
   const imagesHint = images.length
-    ? `\n\nThe PM has also attached ${images.length} image${images.length === 1 ? "" : "s"} for reference (visible to you in this message): ${images.map((a) => a.name).join(", ")}`
+    ? `\n\nThe PM has also attached ${images.length} reference image${images.length === 1 ? "" : "s"} (visible to you in this message): ${images.map((a) => a.name).join(", ")}`
     : "";
   const docsBlock = docs.length
     ? `\n\nADDITIONAL CONTEXT FROM ATTACHED DOCUMENTS:\n${docs
@@ -71,7 +81,7 @@ CLASSIFICATION GUIDE — choose the most specific studyType:
 
 Return a JSON object with this exact schema:
 {
-  "summary": "2-3 sentence overview. Name the study type explicitly (e.g. 'A positioning concept validation testing 5 tagline variants for Adobe Express India').",
+  "summary": "2-3 sentence overview. Name the study type explicitly and reference the actual product/audience the PM described — do NOT use placeholder product names from examples. Example phrasing: 'A positioning concept validation testing N variants for [the product the PM actually named] targeting [the audience the PM actually named]'.",
   "restatedHypothesis": "The PM's belief as a testable statement",
   "restatedResearchQuestion": "What the PM wants to LEARN (distinct from what they believe). If only a hypothesis is given, derive the implicit research question.",
   "restatedProduct": "What the product/feature is in precise terms",
@@ -80,7 +90,7 @@ Return a JSON object with this exact schema:
   "researchFocus": "The single most critical question this research must answer",
   "potentialChallenges": ["challenge 1", "...up to 3"],
   "studyType": "variant_comparison | positioning_test | concept_validation | workflow_evaluation | feature_assessment | attitudinal | behavioral | exploratory",
-  "evaluationSubject": "REQUIRED. What exactly is being tested in plain language (e.g. '5 tagline variants for Adobe Express India', or 'AI background removal feature for SMB photographers')",
+  "evaluationSubject": "REQUIRED. What exactly is being tested in plain language, derived from PM input only — do not use placeholder product/geography. Format: '<N variant-type-label>s for <product the PM described> targeting <audience the PM described>' or similar.",
   "successCriteria": "REQUIRED. What 'good' looks like — the signal that would let the PM say 'yes ship' or 'yes proceed'",
   "variants": { "label": "Tagline | Concept | Headline etc.", "items": ["variant 1", "variant 2", ...] }
 }
@@ -333,9 +343,16 @@ ${method === "interview" ? "Give detailed, narrative answers. Speak in first per
 export function buildSurveyBatchPrompt(
   questions: Question[],
   variants: InstrumentVariant[] | undefined,
-  respondentProfiles: Array<{ id: string; profile: string; clusterName: string }>
+  respondentProfiles: Array<{ id: string; profile: string; clusterName: string }>,
+  /**
+   * Ordered list of variant IDs whose IMAGES are attached to this message
+   * (in the same order as the image content blocks). Used to label each
+   * attached image as "Variant N's image" in the prompt text.
+   */
+  imageVariantIds?: string[]
 ): string {
   const hasVariants = variants && variants.length > 0;
+  const imageIdSet = new Set(imageVariantIds ?? []);
 
   // Build the question matrix to ask
   let questionBlock = "";
@@ -343,11 +360,20 @@ export function buildSurveyBatchPrompt(
     const perVariantQs = questions.filter((q) => q.perVariant);
     const crossQs = questions.filter((q) => !q.perVariant);
 
-    questionBlock = `## VARIANTS YOU ARE EVALUATING (${variants.length} total — these are LITERAL items you must react to by name and content)
+    // For each variant, either show its text OR point at the attached image
+    const variantLines = variants.map((v, i) => {
+      if (imageIdSet.has(v.id)) {
+        const imgIdx = (imageVariantIds ?? []).indexOf(v.id) + 1;
+        return `Variant ${i + 1} [id: ${v.id}]: SEE IMAGE #${imgIdx} attached to this message. Description (for context only — DO NOT parrot back): "${v.text}"`;
+      }
+      return `Variant ${i + 1} [id: ${v.id}]:\n"${v.text}"`;
+    });
 
-${variants.map((v, i) => `Variant ${i + 1} [id: ${v.id}]:\n"${v.text}"`).join("\n\n")}
+    questionBlock = `## VARIANTS YOU ARE EVALUATING (${variants.length} total — these are LITERAL items you must react to)
 
-CRITICAL: The text above is the FULL content of each variant. You are NOT being asked about abstract variants — you are reacting to these specific strings. Each respondent must reference the SPECIFIC content (the actual words/phrases) when explaining their reactions. Do NOT say "I haven't seen the variant" or "show me the tagline" — they are RIGHT ABOVE.
+${variantLines.join("\n\n")}
+
+${imageIdSet.size > 0 ? `IMAGE GUIDANCE: ${imageIdSet.size} variant${imageIdSet.size === 1 ? " is" : "s are"} attached as image${imageIdSet.size === 1 ? "" : "s"} to this message. Look at the IMAGE itself and react as your persona would react VISUALLY (composition, colour, cultural cues, what catches the eye, what feels off). Don't quote the description back — it's context, not what the audience sees.\n\n` : ""}CRITICAL: You are NOT being asked about abstract variants — you are reacting to these specific items. For text variants, reference the specific words/phrases in your answers. For image variants, reference specific visual elements you see (a layout choice, a colour, an object). Do NOT say "I haven't seen the variant" — they are RIGHT HERE.
 
 ## PER-VARIANT QUESTIONS (each is asked once per variant)
 ${perVariantQs.map((q) => formatQuestion(q)).join("\n\n")}

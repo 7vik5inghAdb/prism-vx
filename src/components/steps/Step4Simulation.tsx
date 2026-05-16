@@ -24,6 +24,7 @@ const BATCH_SIZE = 5;
 
 export function Step4Simulation() {
   const {
+    context,
     selectedMethod,
     personas,
     instrument,
@@ -109,6 +110,7 @@ export function Step4Simulation() {
               method: "survey",
               personas,
               instrument,
+              context, // includes per-variant image content for vision
               batchIndex,
               panelSize: total,
             }),
@@ -191,6 +193,7 @@ export function Step4Simulation() {
             method: "interview",
             personas,
             instrument,
+            context,
             respondentIndex: i,
             panelSize: total,
           }),

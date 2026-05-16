@@ -19,6 +19,19 @@ export interface Attachment {
   mediaType?: string; // e.g. "image/png"
 }
 
+/**
+ * One variant being evaluated. The `description` is the human-readable
+ * label/content (e.g. the tagline text itself, or a one-line description of
+ * an image variant). The optional `image` is the actual visual the personas
+ * react to in simulation. When `image` is present, personas see the image;
+ * when only `description` is present, personas see the description as text.
+ */
+export interface VariantInput {
+  id: string;
+  description: string;
+  image?: Attachment; // kind must be "image" when present
+}
+
 export interface ResearchContext {
   hypothesis: string;
   // What the PM wants to learn (distinct from the hypothesis they hold)
@@ -26,11 +39,19 @@ export interface ResearchContext {
   productDescription: string;
   targetAudience: string;
   objectives: string;
+  // Reference files: PDFs, DOCX, images that provide CONTEXT but are NOT
+  // variants being tested. The orchestrator reads them to refine its
+  // interpretation.
   attachments?: Attachment[];
-  // Optional: for concept-test studies (e.g. tagline A/B/C testing).
-  // PM enters one variant per line; orchestrator picks them up.
-  variants?: string;
-  variantsLabel?: string; // "Tagline", "Concept", "Headline" etc.
+  // The category/type label for what's being compared (e.g. "Tagline",
+  // "Culturalised Image", "Pricing Plan").
+  variantTypeLabel?: string;
+  // The variants themselves. Empty/missing array = no variant test.
+  variants?: VariantInput[];
+
+  // ── Legacy fields (kept for migration of persisted state from older saves)
+  /** @deprecated use variantTypeLabel */
+  variantsLabel?: string;
 }
 
 export interface OrchestratorInterpretation {

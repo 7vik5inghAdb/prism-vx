@@ -15,6 +15,8 @@ import {
   FileType2,
   Paperclip,
   Loader2,
+  Plus,
+  Trash2,
 } from "lucide-react";
 import { Message } from "@/components/conversation/Message";
 import { EditableText } from "@/components/conversation/EditableText";
@@ -26,7 +28,12 @@ import {
   totalBytes,
   formatSize,
 } from "@/lib/attachments";
-import type { ResearchContext, Attachment, AttachmentKind } from "@/types";
+import type {
+  ResearchContext,
+  Attachment,
+  AttachmentKind,
+  VariantInput,
+} from "@/types";
 
 interface FormErrors {
   hypothesis?: string;
@@ -46,12 +53,14 @@ const DEMO_DEFAULTS: ResearchContext = {
     "People in India who regularly use creative tools for light design needs. Four primary audience cohorts: (1) Massy Consumer/Personal (51%) — Salaried employees, homemakers, non-employed individuals; (2) Small Business/Solopreneurs (32%) — Freelancers, gig workers, small business owners; (3) Students (17%) — Full-time students, some with side freelance work; (4) Creators/Influencers (overlapping cohort) — Photographers, content writers, graphic designers. Demographics: Mean age 31.6 years, median 25-34. Languages: English (100%), Hindi (89%), Marathi (22%). Top content types: Videos/Reels (75%), Social Media Posts (73%), Edited Images (67%).",
   objectives:
     "Explore people's sentiments regarding five different taglines for Adobe Express India. Respondents should rate favorability and state their sentiments regarding each tagline. We want to understand both quantitative resonance and the qualitative drivers behind each tagline's performance.",
-  variants: `Magic of design. In your hands.
-Ek click mein design
-Ab India karega design
-Now anyone can design
-Empowering Indians to design`,
-  variantsLabel: "Tagline",
+  variantTypeLabel: "Tagline",
+  variants: [
+    { id: "v1", description: "Magic of design. In your hands." },
+    { id: "v2", description: "Ek click mein design" },
+    { id: "v3", description: "Ab India karega design" },
+    { id: "v4", description: "Now anyone can design" },
+    { id: "v5", description: "Empowering Indians to design" },
+  ],
   attachments: [],
 };
 
@@ -61,8 +70,8 @@ const EMPTY_FORM: ResearchContext = {
   productDescription: "",
   targetAudience: "",
   objectives: "",
-  variants: "",
-  variantsLabel: "",
+  variantTypeLabel: "",
+  variants: [],
   attachments: [],
 };
 
@@ -291,6 +300,211 @@ function AttachmentUploader({
   );
 }
 
+/**
+ * Structured list of variants. Each row has a one-line description input plus
+ * an optional image-upload slot. When images are provided, the simulation
+ * sends the image to the persona; when only description exists, the
+ * description is shown as the variant content (e.g. for taglines).
+ */
+function VariantList({
+  form,
+  setForm,
+}: {
+  form: ResearchContext;
+  setForm: (updater: (f: ResearchContext) => ResearchContext) => void;
+}) {
+  const variants = form.variants ?? [];
+  const typeLabel = form.variantTypeLabel ?? "";
+
+  function updateVariant(idx: number, patch: Partial<VariantInput>) {
+    setForm((f) => {
+      const next = [...(f.variants ?? [])];
+      next[idx] = { ...next[idx], ...patch };
+      return { ...f, variants: next };
+    });
+  }
+
+  function removeVariant(idx: number) {
+    setForm((f) => ({
+      ...f,
+      variants: (f.variants ?? []).filter((_, i) => i !== idx),
+    }));
+  }
+
+  function addVariant() {
+    setForm((f) => {
+      const list = f.variants ?? [];
+      return {
+        ...f,
+        variants: [
+          ...list,
+          { id: `v${Date.now()}_${list.length + 1}`, description: "" },
+        ],
+      };
+    });
+  }
+
+  async function handleVariantImage(idx: number, file: File) {
+    if (!file.type.startsWith("image/")) return;
+    const result = await parseFile(file, 0); // size budget handled inside
+    if (result.error || !result.attachment) return;
+    if (result.attachment.kind !== "image") return;
+    updateVariant(idx, { image: result.attachment });
+  }
+
+  return (
+    <div>
+      <label className="text-[11px] font-bold text-ink-mid mb-0.5 block">
+        Concept Variants{" "}
+        <span className="text-ink-low font-normal">(optional)</span>
+      </label>
+      <p className="text-[10px] text-ink-low mb-1.5 leading-snug">
+        What kind of items are you comparing? Add one row per variant. Upload
+        an image for image-based variants; leave it empty for text variants
+        like taglines.
+      </p>
+
+      <input
+        type="text"
+        value={typeLabel}
+        onChange={(e) =>
+          setForm((f) => ({ ...f, variantTypeLabel: e.target.value }))
+        }
+        placeholder="Variant type (e.g. Tagline, Culturalised Image, Pricing Plan)"
+        className="w-full px-2.5 py-1.5 text-[12px] border border-line rounded-md bg-bg-deep mb-2"
+      />
+
+      {variants.length > 0 && (
+        <div className="space-y-1.5 mb-1.5">
+          {variants.map((v, i) => (
+            <VariantRow
+              key={v.id}
+              index={i}
+              variant={v}
+              typeLabel={typeLabel}
+              onUpdate={(patch) => updateVariant(i, patch)}
+              onRemove={() => removeVariant(i)}
+              onImageUpload={(file) => handleVariantImage(i, file)}
+            />
+          ))}
+        </div>
+      )}
+
+      <button
+        type="button"
+        onClick={addVariant}
+        className="w-full py-1.5 text-[11px] font-semibold text-ink-mid hover:text-magenta border border-dashed border-line hover:border-magenta/40 rounded-md flex items-center justify-center gap-1.5 transition-colors"
+      >
+        <Plus className="w-3 h-3" />
+        Add {typeLabel ? typeLabel.toLowerCase() : "variant"}
+      </button>
+    </div>
+  );
+}
+
+function VariantRow({
+  index,
+  variant,
+  typeLabel,
+  onUpdate,
+  onRemove,
+  onImageUpload,
+}: {
+  index: number;
+  variant: VariantInput;
+  typeLabel: string;
+  onUpdate: (patch: Partial<VariantInput>) => void;
+  onRemove: () => void;
+  onImageUpload: (file: File) => void;
+}) {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const hasImage = !!variant.image;
+  const imagePreview = hasImage && variant.image?.content ? variant.image.content : null;
+
+  return (
+    <div className="neu-card-sm rounded-md p-2.5">
+      <div className="flex items-center gap-2 mb-1.5">
+        <span className="text-[10px] font-bold text-magenta w-5 flex-shrink-0">
+          {typeLabel ? typeLabel : "Variant"} {index + 1}
+        </span>
+        <input
+          type="text"
+          value={variant.description}
+          onChange={(e) => onUpdate({ description: e.target.value })}
+          placeholder={
+            typeLabel
+              ? `${typeLabel} description / content`
+              : "Description (e.g. the tagline text or a description of the image)"
+          }
+          className="flex-1 px-2 py-1 text-[12px] border border-line rounded bg-bg-deep"
+        />
+        <button
+          type="button"
+          onClick={onRemove}
+          className="p-1 text-ink-low hover:text-scarlet transition-colors"
+          title="Remove variant"
+        >
+          <Trash2 className="w-3 h-3" />
+        </button>
+      </div>
+
+      <div className="flex items-center gap-2">
+        {hasImage ? (
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            {imagePreview ? (
+              <img
+                src={imagePreview}
+                alt={variant.image!.name}
+                className="w-10 h-10 object-cover rounded flex-shrink-0 border border-line"
+              />
+            ) : (
+              <div className="w-10 h-10 rounded flex-shrink-0 flex items-center justify-center bg-bg-elevated">
+                <ImageIcon className="w-4 h-4 text-ink-mid" />
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] text-ink-mid truncate">
+                {variant.image!.name}
+              </p>
+              <p className="text-[9px] text-ink-low">
+                {formatSize(variant.image!.size)} · personas will see this image
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => onUpdate({ image: undefined })}
+              className="p-1 text-ink-low hover:text-scarlet transition-colors"
+              title="Remove image"
+            >
+              <XIcon className="w-3 h-3" />
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            className="flex items-center gap-1.5 text-[10px] text-ink-low hover:text-magenta border border-dashed border-line hover:border-magenta/40 rounded px-2 py-1 transition-colors"
+          >
+            <ImageIcon className="w-3 h-3" />
+            Upload image (optional)
+          </button>
+        )}
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/png,image/jpeg,image/webp,image/gif"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) onImageUpload(file);
+            e.target.value = "";
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
 function ContextForm({
   form,
   errors,
@@ -411,36 +625,10 @@ function ContextForm({
         "Specific outcomes and questions"
       )}
 
-      <div>
-        <label className="text-[11px] font-bold text-ink-mid mb-0.5 block">
-          Concept Variants{" "}
-          <span className="text-ink-low font-normal">(optional)</span>
-        </label>
-        <p className="text-[10px] text-ink-low mb-1.5 leading-snug">
-          For concept tests — one variant per line. Leave blank for non-variant studies.
-        </p>
-        <div className="flex gap-1.5 mb-1.5">
-          <input
-            type="text"
-            value={form.variantsLabel || ""}
-            onChange={(e) =>
-              setForm((f) => ({ ...f, variantsLabel: e.target.value }))
-            }
-            placeholder="Label (Tagline, Concept, Pricing Option…)"
-            className="flex-1 px-2 py-1 text-[11px] border border-line rounded bg-bg-deep"
-          />
-        </div>
-        <AutoTextarea
-          value={form.variants || ""}
-          onChange={(e) =>
-            setForm((f) => ({ ...f, variants: e.target.value }))
-          }
-          placeholder="One variant per line"
-          minRows={4}
-          maxRows={20}
-          className="w-full px-2.5 py-2 text-[12px] border border-line rounded-md bg-bg-deep text-ink-high placeholder-ink-dim font-mono leading-relaxed"
-        />
-      </div>
+      <VariantList
+        form={form}
+        setForm={setForm}
+      />
 
       <AttachmentUploader
         attachments={form.attachments || []}

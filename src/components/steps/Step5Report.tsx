@@ -134,7 +134,7 @@ export function Step5Report() {
     setIsDownloading(true);
     try {
       const { generatePDF } = await import("@/lib/pdf");
-      await generatePDF(report, context);
+      await generatePDF(report, context, interpretation);
     } finally {
       setIsDownloading(false);
     }
@@ -143,7 +143,7 @@ export function Step5Report() {
   function handleDownloadMarkdown() {
     if (!report || !context) return;
     import("@/lib/pdf").then(({ generateMarkdown }) => {
-      const md = generateMarkdown(report, context);
+      const md = generateMarkdown(report, context, interpretation);
       downloadText(md, `prism-report-${Date.now()}.md`, "text/markdown");
     });
   }

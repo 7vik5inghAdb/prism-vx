@@ -25,10 +25,19 @@ export async function POST(req: NextRequest) {
 
     const userPrompt = buildOrchestratorPrompt(context);
 
-    // Collect image attachments to send as Claude vision content blocks
-    const imageInputs = (context.attachments || [])
-      .filter((a) => a.kind === "image")
+    // Collect image attachments AND per-variant images to send as Claude
+    // vision content blocks. Reference attachments help with context; variant
+    // images let the orchestrator classify the study type accurately.
+    const referenceImages = (context.attachments || [])
+      .filter((a) => a.kind === "image" && a.content)
       .map((a) => ({ dataUrl: a.content, mediaType: a.mediaType }));
+    const variantImages = (Array.isArray(context.variants) ? context.variants : [])
+      .filter((v) => v.image && v.image.content)
+      .map((v) => ({
+        dataUrl: v.image!.content,
+        mediaType: v.image!.mediaType,
+      }));
+    const imageInputs = [...referenceImages, ...variantImages];
 
     const response = await callLLM({
       systemPrompt: ORCHESTRATOR_SYSTEM,

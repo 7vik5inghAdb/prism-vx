@@ -185,18 +185,57 @@ const safeStorage: StateStorage = {
   },
 };
 
-// Strip the base64 `content` of image attachments before persisting. Keep the
-// metadata (name, kind, size, mediaType) so the UI can show "image attached"
-// after resume; the LLM has already consumed the image content at orchestrator
-// time so it's not needed downstream.
-function slimContext(ctx: import("@/types").ResearchContext): import("@/types").ResearchContext {
-  if (!ctx.attachments || ctx.attachments.length === 0) return ctx;
-  return {
-    ...ctx,
-    attachments: ctx.attachments.map((a) =>
+// Strip base64 `content` of image attachments AND base64 of per-variant
+// images before persisting. Keep metadata so the UI can show "image attached"
+// after resume. The LLM has already consumed image content during orchestrator
+// and (where applicable) simulation runs.
+function slimContext(
+  ctx: import("@/types").ResearchContext
+): import("@/types").ResearchContext {
+  const out: import("@/types").ResearchContext = { ...ctx };
+
+  if (ctx.attachments && ctx.attachments.length > 0) {
+    out.attachments = ctx.attachments.map((a) =>
       a.kind === "image" ? { ...a, content: "" } : a
-    ),
-  };
+    );
+  }
+
+  if (ctx.variants && Array.isArray(ctx.variants) && ctx.variants.length > 0) {
+    out.variants = ctx.variants.map((v) =>
+      v.image ? { ...v, image: { ...v.image, content: "" } } : v
+    );
+  }
+
+  return out;
+}
+
+/**
+ * Migrate persisted state from older shape:
+ *   - `variants: string` (newline-separated) → `variants: VariantInput[]`
+ *   - `variantsLabel` → `variantTypeLabel`
+ */
+function migrateContext(ctx: unknown): import("@/types").ResearchContext | null {
+  if (!ctx || typeof ctx !== "object") return null;
+  const c = ctx as Record<string, unknown>;
+
+  // Variants migration: string → VariantInput[]
+  if (typeof c.variants === "string") {
+    const lines = c.variants
+      .split("\n")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    c.variants = lines.map((line, i) => ({
+      id: `v${i + 1}`,
+      description: line,
+    }));
+  }
+
+  // Label migration
+  if (typeof c.variantsLabel === "string" && !c.variantTypeLabel) {
+    c.variantTypeLabel = c.variantsLabel;
+  }
+
+  return c as unknown as import("@/types").ResearchContext;
 }
 
 export const useAppStore = create<AppStore>()(
@@ -322,10 +361,15 @@ export const useAppStore = create<AppStore>()(
         pipelineOpen: state.pipelineOpen,
         autosavedAt: state.autosavedAt,
       }),
-      // On rehydration, re-seed streamingRespondents from panelResults so the
-      // Step 4 UI continues to show all completed respondent cards.
+      // On rehydration: (a) migrate older context shapes; (b) re-seed
+      // streamingRespondents from panelResults so Step 4 UI keeps its cards.
       onRehydrateStorage: () => (state) => {
-        if (state && state.panelResults && state.panelResults.respondents) {
+        if (!state) return;
+        if (state.context) {
+          const migrated = migrateContext(state.context);
+          if (migrated) state.context = migrated;
+        }
+        if (state.panelResults && state.panelResults.respondents) {
           state.streamingRespondents = [...state.panelResults.respondents];
         }
       },

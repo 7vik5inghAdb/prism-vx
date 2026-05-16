@@ -15,6 +15,7 @@ import type {
   PersonaCluster,
   ResearchInstrument,
   ResearchMethod,
+  ResearchContext,
   SurveyRespondent,
   InterviewRespondent,
   SurveyAnswer,
@@ -56,6 +57,7 @@ export async function POST(req: NextRequest) {
       method: ResearchMethod;
       personas: PersonaCluster[];
       instrument: ResearchInstrument;
+      context?: ResearchContext; // for per-variant images
       batchIndex?: number;
       respondentIndex?: number;
       panelSize?: number;
@@ -83,12 +85,30 @@ export async function POST(req: NextRequest) {
 async function handleSurveyBatch(body: {
   personas: PersonaCluster[];
   instrument: ResearchInstrument;
+  context?: ResearchContext;
   batchIndex?: number;
   panelSize?: number;
 }) {
-  const { personas, instrument, batchIndex = 0 } = body;
+  const { personas, instrument, batchIndex = 0, context } = body;
   const SURVEY_TOTAL = body.panelSize ?? DEFAULT_SURVEY_TOTAL;
   const variants = instrument.variants?.items;
+
+  // Build per-variant image map from context (where the base64 image content
+  // lives). Map keyed by the order in instrument.variants.items, which
+  // matches context.variants by index.
+  const ctxVariants = Array.isArray(context?.variants) ? context!.variants : [];
+  const variantImages = new Map<string, { dataUrl: string; mediaType?: string }>();
+  if (variants && ctxVariants.length > 0) {
+    for (let i = 0; i < variants.length; i++) {
+      const ctxV = ctxVariants[i];
+      if (ctxV?.image?.content) {
+        variantImages.set(variants[i].id, {
+          dataUrl: ctxV.image.content,
+          mediaType: ctxV.image.mediaType,
+        });
+      }
+    }
+  }
 
   // Distribute respondents across persona clusters proportionally
   const allRespondentProfiles: Array<{
@@ -133,16 +153,32 @@ async function handleSurveyBatch(body: {
     });
   }
 
+  // Build the ordered list of variant images (one image per variant that has
+  // one). The prompt references them as "Variant N's image" in order.
+  const orderedImages: Array<{ dataUrl: string; mediaType?: string }> = [];
+  const imageVariantIds: string[] = [];
+  if (variants) {
+    for (const v of variants) {
+      const img = variantImages.get(v.id);
+      if (img) {
+        orderedImages.push(img);
+        imageVariantIds.push(v.id);
+      }
+    }
+  }
+
   const userPrompt = buildSurveyBatchPrompt(
     instrument.questions,
     variants,
-    batch
+    batch,
+    imageVariantIds.length > 0 ? imageVariantIds : undefined
   );
-  const systemPrompt = `You are simulating ${batch.length} distinct survey respondents. Each has a unique profile. Stay in character for each. Respondents have authentic, varied opinions — not all positive, not all negative.`;
+  const systemPrompt = `You are simulating ${batch.length} distinct survey respondents. Each has a unique profile. Stay in character for each. Respondents have authentic, varied opinions — not all positive, not all negative.${orderedImages.length > 0 ? ` Some variants are images attached to this message; react to them visually.` : ""}`;
 
   const response = await callLLM({
     systemPrompt,
     userPrompt,
+    images: orderedImages.length > 0 ? orderedImages : undefined,
     temperature: 0.85,
     maxTokens: variants ? 12000 : 6000,
     step: `step4_survey_batch_${batchIndex}`,
