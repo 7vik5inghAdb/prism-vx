@@ -202,6 +202,89 @@ Critical design principles:
 
 Always respond with valid JSON matching the specified schema.`;
 
+/**
+ * Study-type-aware question battery for concept-test surveys. Returns the
+ * "Generate EXACTLY..." block + JSON schema example. Each battery is tuned to
+ * eliminate redundancy between Q3/Q4/Q5 that the generic version produced.
+ */
+function getQuestionBatteryForStudyType(
+  studyType: string | undefined,
+  variantTypeLowercase: string,
+  variantCount: number
+): string {
+  const jsonSchema = `Return JSON:
+{
+  "title": "...",
+  "description": "1-2 sentences on what this instrument measures",
+  "rationale": "Why this battery addresses the research objectives",
+  "variants": {
+    "label": "...",
+    "items": [{"id": "v1", "text": "..."}, ...one entry per variant in given order...],
+    "randomizeOrder": true
+  },
+  "questions": [
+    {"id": "q1", "type": "rating", "perVariant": true, "text": "...", "min": 1, "max": 5, "minLabel": "...", "maxLabel": "..."},
+    {"id": "q2", "type": "open_ended", "perVariant": true, "text": "...", "placeholder": "..."},
+    {"id": "q3", "type": "likert", "perVariant": true, "text": "...", "scale": ["Strongly Disagree", "Disagree", "Neutral", "Agree", "Strongly Agree"]},
+    {"id": "q4", "type": "likert", "perVariant": true, "text": "...", "scale": ["Strongly Disagree", "Disagree", "Neutral", "Agree", "Strongly Agree"]},
+    {"id": "q5", "type": "rating", "text": "...", "min": 1, "max": ${variantCount}, "minLabel": "Variant 1", "maxLabel": "Variant ${variantCount}"},
+    {"id": "q6", "type": "open_ended", "text": "...", "placeholder": "..."},
+    {"id": "q7", "type": "open_ended", "text": "...", "placeholder": "..."}
+  ]
+}`;
+
+  const isVisualVariant =
+    studyType === "variant_comparison" &&
+    (variantTypeLowercase.includes("image") ||
+      variantTypeLowercase.includes("design") ||
+      variantTypeLowercase.includes("asset") ||
+      variantTypeLowercase.includes("visual") ||
+      variantTypeLowercase.includes("layout") ||
+      variantTypeLowercase.includes("creative"));
+
+  if (isVisualVariant) {
+    return `Generate EXACTLY these 7 questions with NO redundancy between them:
+
+PER-VARIANT (perVariant: true) — asked once per variant:
+1. Rating 1-5: how visually appealing this version is
+2. Open-ended: what SPECIFIC visual elements stand out — capture BOTH positive AND negative reactions in this one answer
+3. Likert: "This version feels authentic and appropriate for the target audience (not stereotypical, not forced)" (Strongly Disagree → Strongly Agree)
+4. Likert: "I would publish this version without manual revision" (Strongly Disagree → Strongly Agree)
+
+CROSS-VARIANT (no perVariant flag) — asked once after all variants seen:
+5. Rating 1-${variantCount}: which version would you actually use in your work
+6. Open-ended: at which version does the adaptation start to feel forced, unnecessary, or like it crosses a line? Be specific about WHERE the line is.
+7. Open-ended: which single visual element matters MOST to you when judging whether a version feels right?
+
+CRITICAL DESIGN RULES:
+- Q3 (authenticity) and Q4 (publish-readiness) measure DIFFERENT things. Don't merge them.
+- Q2 captures BOTH positives and negatives in one prompt — do NOT add a separate "dislikes" question.
+- Q6 surfaces the threshold where adaptation overshoots. Q7 surfaces priority. These are distinct cross-variant signals.
+
+${jsonSchema}`;
+  }
+
+  // Default text-based variant comparison (taglines, copy, positioning)
+  return `Generate EXACTLY these 7 questions with NO redundancy between them:
+
+PER-VARIANT (perVariant: true) — asked once per variant:
+1. Rating 1-5: how much this ${variantTypeLowercase} resonates with you personally
+2. Open-ended: initial GUT REACTION to this specific ${variantTypeLowercase} — what does it make you think or feel, in 1-2 sentences?
+3. Open-ended: structured analysis — what works AND what doesn't work about this specific ${variantTypeLowercase}?
+4. Likert: "This ${variantTypeLowercase} would make me actually try the product" (Strongly Disagree → Strongly Agree)
+5. Likert: "This ${variantTypeLowercase} feels like it was written for someone like me" (Strongly Disagree → Strongly Agree)
+
+CROSS-VARIANT (no perVariant flag) — asked once after all variants seen:
+6. Rating 1-${variantCount}: which ${variantTypeLowercase} would compel YOU most to act
+7. Open-ended: if none captured what would actually motivate you, what would the ideal ${variantTypeLowercase} say?
+
+CRITICAL DESIGN RULES:
+- Q2 (gut reaction) and Q3 (structured analysis) measure DIFFERENT things — gut vs considered. Don't merge.
+- Q4 measures intent-to-act. Q5 measures relevance-to-self. These are distinct.
+
+${jsonSchema}`;
+}
+
 export function buildInstrumentPrompt(
   ctx: ResearchContext,
   interpretation: { studyType?: string; variants?: { label: string; items: string[] } } & object,
@@ -219,6 +302,11 @@ export function buildInstrumentPrompt(
   if (isConceptTest && method === "survey") {
     const variants = (interpretation as { variants: { label: string; items: string[] } }).variants;
     const lower = variants.label.toLowerCase();
+    const battery = getQuestionBatteryForStudyType(
+      studyType,
+      lower,
+      variants.items.length
+    );
     return `Design a SURVEY-based concept test instrument testing ${variants.items.length} ${lower} variants.
 
 VARIANTS TO TEST:
@@ -231,41 +319,10 @@ ${personas.map((p) => `- ${p.name}: ${p.description}`).join("\n")}
 RESEARCH OBJECTIVES:
 ${ctx.objectives}
 
-Generate an instrument with EXACTLY these 7 question types. Phrasing should fit the domain (consumer vs B2B vs healthcare etc.) — adapt language naturally.
+${battery}
 
-PER-VARIANT (perVariant: true) — asked once per variant:
-1. Rating 1-5: resonance with personal needs / use case
-2. Open-ended: initial thoughts and feelings about this ${lower}
-3. Open-ended: what they like most and dislike most
-4. Likert: an intent question ("...would make me want to try this product" or "...would make me want to evaluate this for my team" — adapt to domain)
-5. Likert: a relevance question ("...feels relevant to someone like me" or "...fits my use case" — adapt to domain)
-
-CROSS-VARIANT (no perVariant flag) — asked once after all variants are evaluated:
-6. Rating: which ${lower} (1-${variants.items.length}) makes them most interested
-7. Open-ended: if none fully captured what would motivate them, what kind of ${lower} would?
-
-Return JSON:
-{
-  "title": "Concept Test — ${variants.label} Validation (or appropriate title based on domain)",
-  "description": "1-2 sentences on what this instrument measures",
-  "rationale": "Why this battery addresses the research objectives",
-  "variants": {
-    "label": "${variants.label}",
-    "items": [{"id": "v1", "text": "..."}, ...one entry per variant in given order...],
-    "randomizeOrder": true
-  },
-  "questions": [
-    {"id": "q1", "type": "rating", "perVariant": true, "text": "...", "min": 1, "max": 5, "minLabel": "...", "maxLabel": "..."},
-    {"id": "q2", "type": "open_ended", "perVariant": true, "text": "...", "placeholder": "..."},
-    {"id": "q3", "type": "open_ended", "perVariant": true, "text": "...", "placeholder": "..."},
-    {"id": "q4", "type": "likert", "perVariant": true, "text": "...", "scale": ["Strongly Disagree", "Disagree", "Neutral", "Agree", "Strongly Agree"]},
-    {"id": "q5", "type": "likert", "perVariant": true, "text": "...", "scale": ["Strongly Disagree", "Disagree", "Neutral", "Agree", "Strongly Agree"]},
-    {"id": "q6", "type": "rating", "text": "...", "min": 1, "max": ${variants.items.length}, "minLabel": "Variant 1", "maxLabel": "Variant ${variants.items.length}"},
-    {"id": "q7", "type": "open_ended", "text": "...", "placeholder": "..."}
-  ]
-}
-
-The variants array MUST list exactly: ${variants.items.map((v, i) => `{"id":"v${i + 1}","text":"${v}"}`).join(", ")}`;
+The variants array MUST list exactly: ${variants.items.map((v, i) => `{"id":"v${i + 1}","text":"${v}"}`).join(", ")}
+The variants.label MUST be exactly: "${variants.label}"`;
   }
 
   // Generic (non-concept-test) instrument
@@ -310,26 +367,47 @@ export function buildRespondentSystemPrompt(
   return `You are simulating a real person responding to a user research study.
 
 CRITICAL — REACT TO WHAT YOU'RE SHOWN:
-The user message contains the EXACT content you are evaluating (variants, concepts, features, etc.) listed verbatim. You CAN see them. NEVER say "I haven't been shown the [tagline/concept/feature] yet" or "you haven't provided it" — they ARE in the prompt. React to the SPECIFIC text/content you see.
+The user message contains the EXACT content you are evaluating (variants, concepts, features, etc.) listed verbatim and/or attached as images. You CAN see them. NEVER say "I haven't been shown the [variant] yet" or "you haven't provided it" — they ARE in the prompt. React to the SPECIFIC text/content you see.
+
+CRITICAL — RESIST NARRATIVE CONVERGENCE:
+Real respondents do NOT all reach the same conclusion. Real data is MESSY.
+
+When evaluating multiple variants, AVOID these convergence patterns:
+- Monotonic progression (1→2→3→4→5 ratings as variants get "more adapted" or "fancier")
+- All respondents picking the same winner
+- Predictable rating arcs that match the obvious "best variant"
+
+INSTEAD, exhibit these REAL patterns:
+- Some respondents prefer the SIMPLEST option (V1/baseline) because it feels honest or familiar
+- Some respondents reject the MOST adapted version as overdone, uncanny, or trying-too-hard
+- Some respondents are inconsistent — give 4 to one variant, 2 to a similar one, can't quite explain why
+- Ratings cluster tightly (e.g. 3.4–3.9 range) more often than they spread (2.0–5.0)
+- A FEW respondents (10–15%) should explicitly DISAGREE with the dominant pattern in the panel
+
+YOUR PERSONA'S PREDISPOSITION MATTERS:
+- If your persona is a SKEPTIC or LAGGARD: rate everything 0.5–1.0 lower than your gut. Express resistance.
+- If your persona has HIGH switching cost or STRONG habit: rate familiar/baseline options HIGHER than experimental ones.
+- If your persona's counterfactual is "I do this manually": compare every variant to what you currently produce. Some variants may not beat your manual process.
+- If your persona is risk-averse: prefer middle-ground variants over extreme adaptations.
 
 REALISM RULES:
-1. STAY IN CHARACTER. Reflect your specific role, demographics, context, expertise. A senior IT buyer in Munich responds nothing like a student in Mumbai.
+1. STAY IN CHARACTER. A skeptic doesn't suddenly become enthusiastic. A cautious corporate user doesn't endorse the most aggressive variant.
 
-2. BE SPECIFIC AND NATURAL. Real respondents give specific, messy answers. Reference your actual tools, frustrations, daily reality. No marketing-speak.
+2. BE SPECIFIC AND NATURAL. Real respondents give specific, messy answers. No marketing-speak. No "this demonstrates real cultural intelligence" — that's analyst commentary, not respondent reaction.
 
-3. VARY YOUR RESPONSES.
-   - Not every respondent is articulate. Some give 1-2 word answers. Some trail off.
-   - Response length should vary: some 5 words, some 50. Not all are essays.
-   - 5-10% of responses may be "I'm not sure" or "doesn't really apply to me" — that's realistic.
-   - You can occasionally contradict yourself — real people do.
+3. VARY RESPONSE LENGTH WILDLY.
+   - 30% of responses: 5–15 words
+   - 50% of responses: 20–40 words
+   - 20% of responses: 40–80 words
+   - NEVER all polished mini-essays. Real respondents are often brief.
 
-4. VARY SENTIMENT. Not everyone likes everything. Real data has spread — don't cluster around 3.5-4.0. Use the full range. Some respondents genuinely give 1s and 2s.
+4. 10% OF RESPONSES should be "I don't know," "doesn't really matter to me," "this all looks the same to me," or similar. That's realistic.
 
-5. EVALUATE INDEPENDENTLY. Each item gets its own honest reaction. Don't let one reaction halo onto another.
+5. CONTRADICT YOURSELF OCCASIONALLY. Rate a variant 4 but say "I dunno, it's fine I guess." Real people are inconsistent.
 
-6. CULTURALLY GROUNDED. React to language, cultural cues, and signals as your persona would. If something feels aspirational, alienating, exclusionary, patronizing — say so naturally with concrete reasoning ("sounds like an NGO slogan," "my mom would like this but I wouldn't share it").
+6. CULTURALLY GROUNDED — but RESIST CLICHÉS. Don't reference "ma" or "negative space" unless your persona is a design expert. Most respondents don't have art-school vocabulary.
 
-7. NEGATIVE FEEDBACK IS SPECIFIC. When you dislike something, articulate WHY with concrete reasoning — comparisons, examples, gut associations.
+7. NEGATIVE FEEDBACK IS SPECIFIC AND OCCASIONAL. Don't make EVERY response negative. Don't make EVERY response positive. Real panels are roughly 30% positive, 30% negative, 40% mixed.
 
 8. CODE-MIX NATURALLY. If you're Hindi-first, naturally code-mix into responses. If you're English-first, don't force other languages.
 
@@ -450,15 +528,39 @@ function formatQuestion(q: Question): string {
 export function buildInterviewPrompt(
   questions: Question[],
   personaProfile: string,
-  clusterName: string
+  clusterName: string,
+  variants?: InstrumentVariant[],
+  imageVariantIds?: string[]
 ): string {
+  const hasVariants = variants && variants.length > 0;
+  const imageIdSet = new Set(imageVariantIds ?? []);
+
+  let variantBlock = "";
+  if (hasVariants) {
+    const variantLines = variants!.map((v, i) => {
+      if (imageIdSet.has(v.id)) {
+        const imgIdx = (imageVariantIds ?? []).indexOf(v.id) + 1;
+        return `Variant ${i + 1} [${v.id}]: SEE IMAGE #${imgIdx} attached. Description (context): "${v.text}"`;
+      }
+      return `Variant ${i + 1} [${v.id}]: "${v.text}"`;
+    });
+
+    variantBlock = `## VARIANTS YOU ARE EVALUATING (${variants!.length} total)
+
+${variantLines.join("\n\n")}
+
+CRITICAL: These ARE the items you are reacting to. They are listed above (and any image variants are attached to this message). Do NOT say "I haven't been shown the variant" or "you haven't provided it" — they are RIGHT HERE. Reference specific elements in your answers by their content or visible details.
+
+`;
+  }
+
   const questionList = questions
     .map((q, i) => `Q${i + 1}: ${q.text}`)
     .join("\n");
 
   return `You are a research participant being interviewed. Your persona is described in your system prompt.
 
-INTERVIEW QUESTIONS (answer each as yourself):
+${variantBlock}INTERVIEW QUESTIONS (answer each as yourself, referencing the specific variants where relevant):
 ${questionList}
 
 Return a JSON object:
@@ -471,9 +573,9 @@ Return a JSON object:
 For each answer:
 - Speak naturally in first person
 - Give substantive, thoughtful responses (4-8 sentences)
+- Reference SPECIFIC variants by their content or visible elements when relevant
 - Include specific examples from your experience where relevant
 - Express uncertainty, nuance, or mixed feelings where authentic
-- Don't just agree — react authentically with cultural specifics
 
 Cluster: ${clusterName}
 Profile: ${personaProfile.slice(0, 400)}`;
@@ -569,13 +671,14 @@ Compute and synthesize an ADRS-quality concept test report. Return JSON with thi
   "executiveSummary": "2-3 sentence top-level summary including the headline finding (e.g., 'no clear winner' or 'V3 outperformed others')",
   "qualitativeOverview": "2-3 paragraphs synthesizing the major qualitative themes that cut across variants. Reference specific variants as examples. Note tensions, surprising patterns, and what voices emerged.",
   "participantProfile": {
-    "cohorts": [{"name": "...", "count": <int>, "percent": <num>, "characteristics": "1-line description"}],
-    "meanAge": <number>,
-    "medianAge": <number>,
-    "ageDistribution": [{"band": "18-24", "percent": <num>}, ...],
-    "languageDistribution": [{"language": "...", "percent": <num>}, ...],
-    "topTools": [{"tool": "...", "percent": <num>}, ...],
-    "topContentTypes": [{"type": "...", "percent": <num>}, ...]
+    "cohorts": [{"name": "...", "count": <int>, "percent": <num>, "characteristics": "1-line description derived from the persona cluster's actual narrativeProfile — NOT invented"}]
+    // ANTI-HALLUCINATION RULE: Do NOT invent meanAge, medianAge, ageDistribution, languageDistribution, topTools, or topContentTypes UNLESS those exact values are present in persona dimension values or panel data. If you cannot point to specific source data, OMIT the field entirely from the JSON. A skeletal profile with just cohorts is correct. A profile with fabricated "Mean age: 31.6" or "Hindi: 89%" is WRONG.
+    // Only include the optional fields below if the persona dimensions explicitly contain age bands, languages, tools, or content types. Otherwise, OMIT them.
+    // "meanAge": <only if derivable from dimensions>,
+    // "ageDistribution": [<only if dimensions include age bands>],
+    // "languageDistribution": [<only if dimensions include language preferences>],
+    // "topTools": [<only if dimensions or panel data mention tools>],
+    // "topContentTypes": [<only if data mentions content types>]
   },
   "variantPerformance": [
     {
@@ -620,11 +723,12 @@ Compute and synthesize an ADRS-quality concept test report. Return JSON with thi
 }
 
 CRITICAL DATA RULES:
-- Compute averageRating, interestPercent, and ratingDistribution from the actual answers in the panel data. Do not make up numbers.
-- Quotes in topPositives/topNegatives MUST be actual quotes pulled from the open_ended answers in the panel. Pick the most vivid, specific, culturally grounded ones.
+- Use the PRECOMPUTED stats above verbatim for averageRating, interestPercent, ratingDistribution. Do not recompute or invent numbers.
+- Quotes in topPositives/topNegatives MUST be actual quotes pulled from the open_ended answers in the panel. Pick the most vivid, specific, grounded ones. NEVER fabricate quotes.
 - Sentiment row counts should sum approximately to the panel size for that variant.
 - Distribution percents per variant should sum to ~100.
-- Cohort counts in participantProfile should reflect the actual panel composition (use cluster sample sizes).`;
+- Cohort counts in participantProfile should reflect the actual panel composition (use cluster sample sizes).
+- DEMOGRAPHIC STATS ANTI-HALLUCINATION: meanAge/languageDistribution/topTools/topContentTypes percentages must NOT be invented. If the persona dimensions don't contain these values, OMIT those fields from the JSON entirely. Better to ship a skeletal profile than a fabricated one.`;
   }
 
   // Generic non-concept-test synthesis
@@ -664,6 +768,52 @@ Be rigorous and honest. A high score (80+) requires strong, consistent, well-gro
 
 Always respond with valid JSON matching the specified schema.`;
 
+function getStudyTypeRelevantDimensions(studyType?: string): string {
+  switch (studyType) {
+    case "variant_comparison":
+    case "positioning_test":
+    case "concept_test":
+      return `This study measures: variant preference, comparative resonance, segment-level differentiation, language/cultural reactions, decision-driving elements.`;
+    case "concept_validation":
+      return `This study measures: desirability of the concept, fit with user workflows, value perception, adoption likelihood, barriers to use.`;
+    case "workflow_evaluation":
+      return `This study measures: flow clarity, step-level friction, expectation matching, completion confidence, drop-off risks.`;
+    case "feature_assessment":
+      return `This study measures: feature reception, perceived utility, comparison to current solutions, improvement priorities, recommendation likelihood.`;
+    default:
+      return `This study measures: general attitudinal signal, segment-level preferences, qualitative themes.`;
+  }
+}
+
+function getStudyTypeIrrelevantDimensions(studyType?: string): string {
+  switch (studyType) {
+    case "variant_comparison":
+    case "positioning_test":
+    case "concept_test":
+      return `- Missing price sensitivity analysis (not a pricing study)
+- Missing competitive feature analysis (not a competitive study)
+- Missing usability/task completion data (not a behavioral study)
+- Missing willingness-to-pay (not a pricing study)
+- Missing market sizing data (not a market research study)`;
+    case "concept_validation":
+      return `- Missing exact pricing data
+- Missing usability task completion
+- Missing competitive benchmark data
+- Missing ROI calculations`;
+    case "workflow_evaluation":
+      return `- Missing variant comparison (single flow being tested)
+- Missing market positioning data
+- Missing pricing sensitivity
+- Missing brand perception`;
+    case "feature_assessment":
+      return `- Missing visual variant comparison
+- Missing exact pricing thresholds
+- Missing ad-creative effectiveness`;
+    default:
+      return `- Missing data on dimensions not tested by this instrument`;
+  }
+}
+
 export function buildConfidencePrompt(
   primaryFindings: object,
   method: ResearchMethod,
@@ -682,34 +832,53 @@ METHOD: ${method} | PANEL SIZE: ${panelSize} synthetic respondents
 PRIMARY FINDINGS:
 ${JSON.stringify(primaryFindings, null, 2)}
 
-Score these FOUR dimensions (each 0-100, equally weighted in the final score):
+# WHAT THIS STUDY MEASURES (do not penalize for missing other things)
 
-1. INTERNAL CONSISTENCY — Do quantitative ratings match qualitative themes? If a variant rates 3.9 but qualitative analysis is mostly negative, that's an inconsistency. Strong = quant and qual tell the same story.
+${getStudyTypeRelevantDimensions(studyType)}
 
-2. CROSS-PERSONA STABILITY — Do findings hold across persona segments, or are they driven by one outlier cluster? Strong = pattern is consistent across cohorts.
+# WHAT TO EVALUATE
 
-3. SECONDARY ALIGNMENT — Do findings align with what's known about this market/domain from general knowledge? Strong = corroborated by typical behavior of the audience.
+Score these FOUR dimensions (each 0–100, equally weighted):
 
-4. METHODOLOGICAL FIT — Is the method appropriate for what was tested? Don't penalize a tagline study for not measuring price sensitivity. Don't penalize a feature assessment for not measuring positioning. Match method-fit to study type.
+1. INTERNAL CONSISTENCY — Do quantitative ratings match qualitative themes? If ratings are high but qualitative is negative, that's inconsistent.
 
-CRITICAL: Do NOT score on dimensions irrelevant to this study type. Tagline study → no price-sensitivity penalty. Feature assessment → no competitive-positioning penalty.
+2. CROSS-PERSONA STABILITY — Do findings hold across persona segments, or are they driven by one outlier cluster?
 
-Apply general knowledge appropriately. Bias risks of synthetic research: over-positivity, language model preferences, demographic stereotyping, missing edge cases, hallucinated specifics.
+3. SECONDARY ALIGNMENT — Do findings align with what's known about this market/domain from general knowledge?
+
+4. METHODOLOGICAL FIT — Is the method appropriate for what was tested? Given THIS study type's relevant dimensions (listed above), is the instrument fit-for-purpose?
+
+# WHAT NOT TO PENALIZE
+
+DO NOT lower the score for any of these:
+${getStudyTypeIrrelevantDimensions(studyType)}
+
+These are NOT failures of this study — they are out of scope by design. If the LLM finds itself wanting to flag one of the above, it must STOP and not include it in biasFlags or limitationFactors.
+
+# BIAS FLAGS TO LOOK FOR (these ARE relevant to all synthetic studies)
+
+- Over-positivity: ratings too clean/clustered without variance
+- Hallucinated specifics: invented percentages, brand names, demographic statistics, or competitive claims that have no source in the panel data
+- Narrative coherence over messiness: synthetic data that tells a "too clean" story
+- Persona drift: responses that don't reflect stated persona predispositions
+- Convergence: respondents that all reach the same conclusion
 
 Return JSON:
 {
   "score": <0-100>,
   "reasoning": "2-3 sentence holistic explanation of the score",
-  "biasFlags": ["specific bias risk 1", "specific bias risk 2", ...up to 4],
-  "alignmentNotes": "How well do these findings align with broader market knowledge? What corroborates or contradicts them?",
-  "strengthFactors": ["factor 1", "factor 2", ...up to 3],
-  "limitationFactors": ["factor 1", ...up to 3]
+  "biasFlags": ["specific bias risk 1", "...", "..."],
+  "alignmentNotes": "How well do these findings align with broader market knowledge?",
+  "strengthFactors": ["factor 1", "...", "..."],
+  "limitationFactors": ["factor 1", "...", "..."]
 }
 
+biasFlags and limitationFactors MUST be RELEVANT to this study type. Out-of-scope dimensions listed above are FORBIDDEN entries.
+
 Scoring guide:
-- 80-100: Very strong, consistent, well-grounded findings with strong market alignment
-- 60-79: Solid findings with some gaps or minor inconsistencies
-- 40-59: Moderate confidence; directionally useful but requires validation
-- 20-39: Low confidence; significant biases, weak signals, major gaps
-- 0-19: Not reliable; fundamental issues`;
+- 80–100: Very strong, consistent, well-grounded findings
+- 60–79: Solid findings with some gaps or minor inconsistencies
+- 40–59: Moderate confidence; directionally useful but requires validation
+- 20–39: Low confidence; significant biases, weak signals, major gaps
+- 0–19: Not reliable; fundamental issues`;
 }

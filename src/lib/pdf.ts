@@ -69,7 +69,18 @@ export async function generatePDF(
   const contentW = pageW - margin * 2;
   let y = margin;
 
-  const isAdrs = !!report.variantPerformance;
+  // Use the ADRS-style variant performance layout only when there's actual
+  // quantitative data for each variant. Interview studies (or any study where
+  // ratings weren't computable) fall through to the generic findings layout.
+  const isAdrs =
+    !!report.variantPerformance &&
+    report.variantPerformance.length > 0 &&
+    report.variantPerformance.every(
+      (v) =>
+        v.averageRating !== null &&
+        v.averageRating !== undefined &&
+        !Number.isNaN(v.averageRating)
+    );
 
   const addPage = () => {
     doc.addPage();
@@ -216,16 +227,22 @@ export async function generatePDF(
     });
     y += 4;
 
-    // Demographics row
-    if (pp.meanAge || pp.medianAge) {
+    // Demographics row — only render if values are real (>0)
+    const meanAgeReal =
+      typeof pp.meanAge === "number" && pp.meanAge > 0 ? pp.meanAge : null;
+    const medianAgeReal =
+      typeof pp.medianAge === "number" && pp.medianAge > 0 ? pp.medianAge : null;
+    if (meanAgeReal !== null || medianAgeReal !== null) {
       addPageIfNeeded(12);
       doc.setFontSize(8.5);
       doc.setFont("helvetica", "italic");
       doc.setTextColor(107, 114, 128);
       const demoText = [
-        pp.meanAge ? `Mean age: ${pp.meanAge}` : "",
-        pp.medianAge ? `Median: ${pp.medianAge}` : "",
-      ].filter(Boolean).join("  ·  ");
+        meanAgeReal !== null ? `Mean age: ${meanAgeReal}` : "",
+        medianAgeReal !== null ? `Median: ${medianAgeReal}` : "",
+      ]
+        .filter(Boolean)
+        .join("  ·  ");
       doc.text(demoText, margin, y);
       y += 6;
     }
@@ -655,11 +672,17 @@ export function generateMarkdown(
       lines.push(`| ${c.name} | ${c.count} | ${c.percent}% | ${c.characteristics} |`);
     });
     lines.push("");
-    if (report.participantProfile.meanAge || report.participantProfile.medianAge) {
+    const meanReal =
+      typeof report.participantProfile.meanAge === "number" &&
+      report.participantProfile.meanAge > 0;
+    const medReal =
+      typeof report.participantProfile.medianAge === "number" &&
+      report.participantProfile.medianAge > 0;
+    if (meanReal || medReal) {
       lines.push("### Demographics");
-      if (report.participantProfile.meanAge)
+      if (meanReal)
         lines.push(`- Mean age: ${report.participantProfile.meanAge}`);
-      if (report.participantProfile.medianAge)
+      if (medReal)
         lines.push(`- Median age: ${report.participantProfile.medianAge}`);
       lines.push("");
     }
@@ -667,7 +690,19 @@ export function generateMarkdown(
 
   lines.push("---", "", "## EXECUTIVE SUMMARY", "");
 
-  if (report.variantPerformance) {
+  // Use the same isAdrs gate as the PDF — only render the variant performance
+  // tables when ratings actually exist.
+  const mdIsAdrs =
+    !!report.variantPerformance &&
+    report.variantPerformance.length > 0 &&
+    report.variantPerformance.every(
+      (v) =>
+        v.averageRating !== null &&
+        v.averageRating !== undefined &&
+        !Number.isNaN(v.averageRating)
+    );
+
+  if (mdIsAdrs && report.variantPerformance) {
     lines.push("### Quantitative Overview", "");
     lines.push("**Tagline Performance by Average Resonance Rating:**", "");
     lines.push("| Rank | Variant | Avg Rating | Interest to Try |");
@@ -710,7 +745,7 @@ export function generateMarkdown(
     }
   }
 
-  if (report.variantPerformance) {
+  if (mdIsAdrs && report.variantPerformance) {
     lines.push("---", "", "## DETAILED VARIANT ANALYSIS", "");
     report.variantPerformance.forEach((vp, idx) => {
       lines.push(`### Variant ${idx + 1}: "${vp.variantText}"`, "");
@@ -750,7 +785,7 @@ export function generateMarkdown(
     });
   }
 
-  if (!report.variantPerformance && report.keyFindings.length > 0) {
+  if (!mdIsAdrs && report.keyFindings.length > 0) {
     lines.push("---", "", "## KEY FINDINGS", "");
     report.keyFindings.forEach((f, i) => {
       lines.push(`### ${i + 1}. ${f.theme}`);

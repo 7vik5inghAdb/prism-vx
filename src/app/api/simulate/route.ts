@@ -231,10 +231,11 @@ async function handleSurveyBatch(body: {
 async function handleInterview(body: {
   personas: PersonaCluster[];
   instrument: ResearchInstrument;
+  context?: ResearchContext;
   respondentIndex?: number;
   panelSize?: number;
 }) {
-  const { personas, instrument, respondentIndex = 0 } = body;
+  const { personas, instrument, respondentIndex = 0, context } = body;
   const INTERVIEW_TOTAL = body.panelSize ?? DEFAULT_INTERVIEW_TOTAL;
 
   if (respondentIndex >= INTERVIEW_TOTAL) {
@@ -245,12 +246,37 @@ async function handleInterview(body: {
   const profile = generateRespondentProfile(cluster, 0);
   const respondentId = `interviewee_${respondentIndex + 1}`;
 
+  // Variants + per-variant images (same pattern as the survey path)
+  const variants = instrument.variants?.items;
+  const ctxVariants = Array.isArray(context?.variants) ? context!.variants : [];
+  const orderedImages: Array<{ dataUrl: string; mediaType?: string }> = [];
+  const imageVariantIds: string[] = [];
+  if (variants && ctxVariants.length > 0) {
+    for (let i = 0; i < variants.length; i++) {
+      const ctxV = ctxVariants[i];
+      if (ctxV?.image?.content) {
+        orderedImages.push({
+          dataUrl: ctxV.image.content,
+          mediaType: ctxV.image.mediaType,
+        });
+        imageVariantIds.push(variants[i].id);
+      }
+    }
+  }
+
   const systemPrompt = buildRespondentSystemPrompt(profile, cluster.name, "interview");
-  const userPrompt = buildInterviewPrompt(instrument.questions, profile, cluster.name);
+  const userPrompt = buildInterviewPrompt(
+    instrument.questions,
+    profile,
+    cluster.name,
+    variants,
+    imageVariantIds.length > 0 ? imageVariantIds : undefined
+  );
 
   const response = await callLLM({
     systemPrompt,
     userPrompt,
+    images: orderedImages.length > 0 ? orderedImages : undefined,
     temperature: 0.8,
     maxTokens: 6000,
     step: `step4_interview_${respondentIndex}`,
