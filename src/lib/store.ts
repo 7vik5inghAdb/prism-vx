@@ -1,7 +1,11 @@
 "use client";
 
 import { create } from "zustand";
-import { persist, createJSONStorage } from "zustand/middleware";
+import {
+  persist,
+  createJSONStorage,
+  type StateStorage,
+} from "zustand/middleware";
 import type {
   AppState,
   Step,
@@ -108,6 +112,93 @@ const initialRunState = {
   expandedReviewStep: null as Step | null,
 };
 
+// ── Quota-safe localStorage adapter ──────────────────────────────────────────
+// Zustand's default `createJSONStorage(() => localStorage)` does not handle
+// `QuotaExceededError`. When the persisted blob grows past ~5 MB the write
+// silently fails and resume-after-crash stops working. This wrapper catches
+// the quota error, slims state aggressively (drop the report, then the panel
+// results), and as a final fallback clears the autosave key.
+
+function isQuotaError(e: unknown): boolean {
+  if (!(e instanceof Error)) return false;
+  return (
+    e.name === "QuotaExceededError" ||
+    // Older Firefox name
+    e.name === "NS_ERROR_DOM_QUOTA_REACHED" ||
+    /quota/i.test(e.message)
+  );
+}
+
+const safeStorage: StateStorage = {
+  getItem: (name) => {
+    if (typeof window === "undefined") return null;
+    try {
+      return localStorage.getItem(name);
+    } catch {
+      return null;
+    }
+  },
+  removeItem: (name) => {
+    if (typeof window === "undefined") return;
+    try {
+      localStorage.removeItem(name);
+    } catch {
+      /* noop */
+    }
+  },
+  setItem: (name, value) => {
+    if (typeof window === "undefined") return;
+    try {
+      localStorage.setItem(name, value);
+    } catch (e) {
+      if (!isQuotaError(e)) {
+        console.error("[PRISM] localStorage write failed:", e);
+        return;
+      }
+      // Tier 1 fallback: drop the heaviest non-essential state and retry.
+      try {
+        const parsed = JSON.parse(value);
+        if (parsed?.state) {
+          parsed.state.report = null;
+          parsed.state.panelResults = null;
+        }
+        localStorage.setItem(name, JSON.stringify(parsed));
+        console.warn(
+          "[PRISM] localStorage quota exceeded — autosave continued without the report and panel results. Use the 'Save Run' button to capture state safely."
+        );
+        return;
+      } catch (e2) {
+        if (!isQuotaError(e2)) {
+          console.error("[PRISM] Tier-1 autosave fallback failed:", e2);
+        }
+      }
+      // Tier 2 fallback: clear the key so future writes don't keep throwing.
+      try {
+        localStorage.removeItem(name);
+      } catch {
+        /* noop */
+      }
+      console.error(
+        "[PRISM] Autosave disabled this session — storage quota cannot be satisfied. Use the 'Save Run' button to capture state."
+      );
+    }
+  },
+};
+
+// Strip the base64 `content` of image attachments before persisting. Keep the
+// metadata (name, kind, size, mediaType) so the UI can show "image attached"
+// after resume; the LLM has already consumed the image content at orchestrator
+// time so it's not needed downstream.
+function slimContext(ctx: import("@/types").ResearchContext): import("@/types").ResearchContext {
+  if (!ctx.attachments || ctx.attachments.length === 0) return ctx;
+  return {
+    ...ctx,
+    attachments: ctx.attachments.map((a) =>
+      a.kind === "image" ? { ...a, content: "" } : a
+    ),
+  };
+}
+
 export const useAppStore = create<AppStore>()(
   persist(
     (set, get) => ({
@@ -209,12 +300,15 @@ export const useAppStore = create<AppStore>()(
 }),
     {
       name: "prism_autosave_v1",
-      storage: createJSONStorage(() => localStorage),
-      // Persist everything except transient UI state
+      storage: createJSONStorage(() => safeStorage),
+      // Persist everything except transient UI state. We intentionally exclude
+      // `streamingRespondents` (it's a duplicate of `panelResults.respondents`
+      // and gets re-seeded onRehydrate) and we strip base64 image content from
+      // attachments — both prevent localStorage quota blowouts.
       partialize: (state) => ({
         currentStep: state.currentStep,
         stepStatuses: state.stepStatuses,
-        context: state.context,
+        context: state.context ? slimContext(state.context) : null,
         interpretation: state.interpretation,
         personas: state.personas,
         selectedMethod: state.selectedMethod,
@@ -223,17 +317,16 @@ export const useAppStore = create<AppStore>()(
         report: state.report,
         surveyPanelSize: state.surveyPanelSize,
         interviewPanelSize: state.interviewPanelSize,
-        streamingRespondents: state.streamingRespondents,
         currentRunId: state.currentRunId,
         currentRunName: state.currentRunName,
         pipelineOpen: state.pipelineOpen,
         autosavedAt: state.autosavedAt,
       }),
-      // Mark autosave timestamp on every persisted write
+      // On rehydration, re-seed streamingRespondents from panelResults so the
+      // Step 4 UI continues to show all completed respondent cards.
       onRehydrateStorage: () => (state) => {
-        if (state) {
-          // No-op: zustand auto-rehydrates. The timestamp is set on writes via the
-          // wrapper below.
+        if (state && state.panelResults && state.panelResults.respondents) {
+          state.streamingRespondents = [...state.panelResults.respondents];
         }
       },
     }

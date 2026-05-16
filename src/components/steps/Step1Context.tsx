@@ -227,14 +227,21 @@ function AttachmentUploader({
                 key={att.id}
                 className="flex items-center gap-2 neu-card-sm rounded-md p-2"
               >
-                {isImage ? (
+                {isImage && att.content ? (
                   <img
                     src={att.content}
                     alt={att.name}
                     className="w-8 h-8 object-cover rounded flex-shrink-0"
                   />
                 ) : (
-                  <div className="w-8 h-8 rounded flex-shrink-0 flex items-center justify-center bg-bg-elevated">
+                  <div
+                    className="w-8 h-8 rounded flex-shrink-0 flex items-center justify-center bg-bg-elevated"
+                    title={
+                      isImage && !att.content
+                        ? "Preview unavailable after autosave restore"
+                        : undefined
+                    }
+                  >
                     <Icon className="w-4 h-4 text-ink-mid" />
                   </div>
                 )}
