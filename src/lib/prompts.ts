@@ -482,17 +482,32 @@ Your reports must:
 
 export function buildSynthesisPrompt(
   method: ResearchMethod,
-  panelData: SurveyRespondent[] | InterviewRespondent[],
+  panelData: SurveyRespondent[] | InterviewRespondent[] | unknown[],
   instrument: ResearchInstrument,
   personas: PersonaCluster[],
   interpretation: object,
-  ctx: ResearchContext
+  ctx: ResearchContext,
+  variantStats?: Array<{
+    variantId: string;
+    variantText: string;
+    n: number;
+    avgRating: number | null;
+    intentPositivePct: number | null;
+    ratingDistribution: Record<string, number>;
+  }> | null
 ): string {
   const hasVariants = !!instrument.variants;
+  // Use compact JSON (no indent) — saves ~30% on tokens for large arrays
   const panelSummary =
     method === "survey"
-      ? `SURVEY RESPONSES (${panelData.length} respondents):\n${JSON.stringify(panelData, null, 2)}`
-      : `INTERVIEW TRANSCRIPTS (${panelData.length} respondents):\n${JSON.stringify(panelData, null, 2)}`;
+      ? `SURVEY RESPONSES (${panelData.length} respondents, slim format — join answers to questions via qid and instrument.questions; join to variants via vid and instrument.variants.items; join to clusters via cluster name and personas):\n${JSON.stringify(panelData)}`
+      : `INTERVIEW TRANSCRIPTS (${panelData.length} respondents):\n${JSON.stringify(panelData)}`;
+
+  // Quant pre-computation block (so the LLM doesn't need to crunch arithmetic
+  // across 100 respondents — it focuses on qualitative synthesis)
+  const variantStatsBlock = variantStats
+    ? `\n\nPRECOMPUTED QUANTITATIVE STATS (use these verbatim — do not recompute):\n${JSON.stringify(variantStats)}`
+    : "";
 
   if (hasVariants && method === "survey") {
     const variants = instrument.variants!.items;
@@ -507,10 +522,8 @@ SUCCESS CRITERIA (what 'good' looks like): ${successCriteria}
 
 WRITE FOR A PM WHO HAS TO MAKE A SHIP/NO-SHIP DECISION TOMORROW. Connect every finding to a concrete decision. Use the variant label "${variantLabel}" in section headers and analysis (e.g. "Detailed ${variantLabel} Analysis", "Cross-${variantLabel} Patterns", "Recommended ${variantLabel}").
 
-ORIGINAL CONTEXT:
-${JSON.stringify(interpretation, null, 2)}
-
-PRODUCT: ${ctx.productDescription}
+RESEARCH HYPOTHESIS: ${(interp.restatedHypothesis as string) ?? ctx.hypothesis}
+${interp.restatedResearchQuestion ? `RESEARCH QUESTION: ${interp.restatedResearchQuestion}\n` : ""}PRODUCT: ${ctx.productDescription}
 AUDIENCE: ${ctx.targetAudience}
 
 PERSONA CLUSTERS:
@@ -522,7 +535,7 @@ ${variants.map((v) => `[${v.id}] "${v.text}"`).join("\n")}
 INSTRUMENT QUESTIONS:
 ${instrument.questions.map((q) => `[${q.id}] ${q.text}${q.perVariant ? " (per-variant)" : ""}`).join("\n")}
 
-${panelSummary}
+${panelSummary}${variantStatsBlock}
 
 Compute and synthesize an ADRS-quality concept test report. Return JSON with this exact schema:
 {
