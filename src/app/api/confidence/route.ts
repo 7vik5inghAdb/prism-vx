@@ -1,10 +1,13 @@
 export const maxDuration = 60;
 
 import { NextRequest, NextResponse } from "next/server";
-import { callLLM, parseJSON } from "@/lib/llm";
+import { callLLM, zodValidator } from "@/lib/llm";
 import { buildConfidencePrompt, CONFIDENCE_SYSTEM } from "@/lib/prompts";
 import { ConfidenceScoreSchema } from "@/lib/schemas";
 import type { ResearchMethod } from "@/types";
+import type { z } from "zod";
+
+type ConfidencePayload = z.infer<typeof ConfidenceScoreSchema>;
 
 export async function POST(req: NextRequest) {
   try {
@@ -28,18 +31,20 @@ export async function POST(req: NextRequest) {
       body.studyType
     );
 
-    const response = await callLLM({
+    const response = await callLLM<ConfidencePayload>({
       systemPrompt: CONFIDENCE_SYSTEM,
       userPrompt,
-      temperature: 0.3,
+      // 0.5 — needs to be high enough to differentiate study quality across
+      // runs, but stable enough that the same study + same data produces a
+      // similar score on repeat. The previous 0.2 was too precision-tuned and
+      // collapsed every study to ~72 (anchored on the prompt's old midpoint).
+      temperature: 0.5,
       maxTokens: 1500,
       step: "step5_confidence",
+      validate: zodValidator(ConfidenceScoreSchema, "confidence score"),
     });
 
-    const parsed = parseJSON(response.text, "confidence score");
-    const validated = ConfidenceScoreSchema.parse(parsed);
-
-    return NextResponse.json({ confidenceScore: validated });
+    return NextResponse.json({ confidenceScore: response.validatedValue });
   } catch (error) {
     console.error("Confidence API error:", error);
     const message = error instanceof Error ? error.message : "Unknown error";

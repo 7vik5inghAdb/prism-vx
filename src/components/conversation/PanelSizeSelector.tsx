@@ -16,11 +16,13 @@ export function PanelSizeSelector({
   onConfirm: () => void;
   disabled?: boolean;
 }) {
-  const isSurvey = method === "survey";
-  const min = isSurvey ? 20 : 1;
+  // Survey-style methods (survey/maxdiff/kano/conjoint/concept_test) all use
+  // the survey-style range. Only interviews use the interview range.
+  const isSurvey = method !== "interview";
+  const min = isSurvey ? 10 : 1;
   const max = isSurvey ? 500 : 10;
   const defaultRecommended = isSurvey ? 100 : 3;
-  const step = isSurvey ? 10 : 1;
+  const step = isSurvey ? 5 : 1;
 
   return (
     <div className="neu-card-sm rounded-xl p-4 space-y-3">
@@ -73,7 +75,7 @@ export function PanelSizeSelector({
 
       <div className="flex justify-center gap-2">
         {[
-          isSurvey ? 50 : 1,
+          isSurvey ? 10 : 1,
           defaultRecommended,
           isSurvey ? 200 : 5,
         ].map((preset) => (

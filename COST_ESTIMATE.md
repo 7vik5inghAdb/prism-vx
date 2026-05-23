@@ -1,0 +1,110 @@
+# PRISM — Per-Run Cost Estimate
+
+**Scenario:** one full pipeline run — 5-variant concept/tagline **survey**, **100 respondents**, maximum context.
+**Date:** 2026-05-22
+**Basis:** the current algorithm and models in `sharp-brahmagupta-07c445`.
+
+---
+
+## Headline
+
+| | |
+|---|---|
+| **Cost per run (max context)** | **≈ $5.90** |
+| Typical run (realistic outputs) | ≈ $3.50 – $4.00 |
+| Worst case (validation retries fire) | ≈ $12 – $18 |
+| Theoretical ceiling (every call fills 200k) | ≈ $24 |
+| LLM calls per run | 26 (6 Opus + 20 Haiku) |
+
+At **100 runs/month** that is roughly **$590/mo** at max, **~$375/mo** typical.
+
+---
+
+## Assumptions
+
+- **Models** (`src/lib/llm.ts`):
+  - `MODEL_DEFAULT` = `claude-opus-4-1-20250805` — steps 1, 2, 3, 5, 6
+  - `MODEL_SIMULATION` = `claude-haiku-4-5` — step 4 (panel simulation)
+- **Pricing** (standard Anthropic list price, no caching/batch discount):
+  - Opus 4.1 — **$15 / MTok input**, **$75 / MTok output**
+  - Haiku 4.5 — **$1 / MTok input**, **$5 / MTok output**
+- **"Max context"** — every call's output pinned to its `maxTokens` cap; synthesis input at the algorithm's own `INPUT_CHAR_BUDGET` ceiling of 600,000 chars (≈ 150k tokens).
+- **Happy path** — no validation retries, no instrument coverage-repair pass. Self-critique loop **on** (default).
+- **No prompt caching** — `callLLM` does not set `cache_control`, so every token is billed at full input rate, including the rules block + instrument + variants re-sent on all 20 simulate batches.
+
+---
+
+## Per-step breakdown (max scenario)
+
+| Step | Model | Calls | `maxTokens` | Input tok | Output tok | Input $ | Output $ | Step $ |
+|---|---|---|---|---|---|---|---|---|
+| 1. Orchestrate | Opus 4.1 | 1 | 2,000 | 15,000 | 2,000 | $0.225 | $0.150 | **$0.38** |
+| 2. Personas | Opus 4.1 | 1 | 3,000 | 6,000 | 3,000 | $0.090 | $0.225 | **$0.32** |
+| 3. Instrument | Opus 4.1 | 1 | 4,000 | 8,000 | 4,000 | $0.120 | $0.300 | **$0.42** |
+| 4. Simulate (panel) | Haiku 4.5 | **20** | 12,000 | 90,000 | 240,000 | $0.090 | $1.200 | **$1.29** |
+| 5. Synthesize | Opus 4.1 | 1 | 8,000 | 150,000 | 8,000 | $2.250 | $0.600 | **$2.85** |
+| 5b. Self-critique | Opus 4.1 | 1 | 3,000 | 8,500 | 3,000 | $0.128 | $0.225 | **$0.35** |
+| 6. Confidence | Opus 4.1 | 1 | 1,500 | 12,000 | 1,500 | $0.180 | $0.113 | **$0.29** |
+| **Total** | | **26** | | **289,500** | **261,500** | **$3.08** | **$2.81** | **$5.90** |
+
+**By model:** Opus 4.1 → $4.61 · Haiku 4.5 → $1.29
+
+---
+
+## How the numbers were derived
+
+### Call count
+- Steps 1, 2, 3, 5, 5b, 6 = one `callLLM` each → 6 Opus calls.
+- Step 4 batches respondents: `BATCH_SIZE = 5`, panel = 100 → **100 / 5 = 20 Haiku calls**.
+- Self-critique (`src/app/api/synthesize/route.ts`) fires one extra Opus call unless `PRISM_SELF_CRITIQUE=off`.
+
+### Output tokens
+"Max context" pins each call to its `maxTokens` cap (the algorithm's hard output limit). Simulate uses `maxTokens: 12000` for variant studies (`6000` without variants).
+
+### Input tokens
+- **Steps 1-3** are bounded by the study brief, interpretation, and persona payloads — generous-max ≈ 6k–15k tokens each.
+- **Step 4 (simulate)** — per batch: the `buildBatchRespondentSystemPrompt` rules block (~1.5k tok) + 5 persona profiles + the full instrument's questions + 5 variant texts ≈ **4.5k tok/batch × 20 = 90k**. *Text-variant study assumed.* An **image-variant** study re-sends the variant images on every batch (≈ +7.5k tok/batch) → simulate input rises to ~240k tok, adding **~$0.15**.
+- **Step 5 (synthesize)** is the dominant line. A 5-variant, 100-respondent concept test produces ~29 answers per respondent (per-variant questions repeat across all 5 variants). Slimmed, that approaches ~750k chars and is sampled down to the **600k-char budget ≈ 150k input tokens**. This single call is **~48% of total run cost**.
+- **Step 5b** sends `JSON.stringify(synthesis).slice(0, 30_000)` ≈ 7.5k tok + the critique instructions.
+- **Step 6** serializes the full synthesis output as `primaryFindings` ≈ 12k tok.
+
+---
+
+## Cost tiers explained
+
+| Tier | Cost | Trigger |
+|---|---|---|
+| **Typical** | ~$3.50–4.00 | Real LLM outputs run 40–50% of `maxTokens`; synthesis input still high for variant studies |
+| **Max** | **~$5.90** | Outputs at cap, synthesis input at the 600k-char ceiling |
+| **Worst case** | ~$12–18 | `callLLM`'s validation-retry loop (up to 2 repair retries per Opus call) + the instrument coverage-repair pass. A single synthesis retry re-sends ~150k input |
+| **Theoretical ceiling** | ~$24 | If every call filled its 200k context window — not reachable with the current algorithm |
+
+---
+
+## What drives the cost
+
+1. **Synthesis input — $2.25 (38% of the run).** The 5-variant × 100-respondent panel slims to ~150k Opus input tokens. This is the single most expensive line item.
+2. **Haiku panel output — $1.20.** 20 batches × 12k output tokens. Haiku being the cheap model keeps the whole panel simulation at ~$1.29 even at max.
+3. **Opus output at $75/MTok — $1.61 total.** Only 21.5k tokens, but the per-token rate makes it the second-largest contributor.
+4. **Self-critique — $0.35.** A full extra Opus call; toggleable.
+
+---
+
+## Cost-reduction levers (not yet implemented)
+
+| Lever | Est. saving | Effort / risk |
+|---|---|---|
+| **Enable prompt caching** — the 20 simulate batches re-send the same rules block + instrument + variants every call; `cache_control` makes 19/20 ~90% cheaper on input. Also helps the Opus calls. | 30–40% of input cost | Low — add `cache_control`, no behavior change |
+| **Sample the panel for synthesis** — feed ~60 respondents to the synthesizer instead of all 100 up to the 600k cap | ~$1.00 (halves the synthesis input line) | Low — marginal quality loss |
+| **`PRISM_SELF_CRITIQUE=off`** — skip the critique pass when budget matters more than report polish | ~$0.35 | Zero — env var already exists |
+| **Drop simulate `maxTokens` 12000 → 8000** — 5 respondents × ~29 answers rarely needs 12k | Lowers the worst-case ceiling, not the typical cost | Low — risk of truncation on verbose panels |
+
+Enabling prompt caching alone would bring a max run from ~$5.90 toward **~$4** and a typical run toward **~$2.50**.
+
+---
+
+## Bottom line
+
+Budget **~$6 per run** at maximum context, **~$4** for a typical run. The cost is concentrated in two places — the **synthesis call** (large Opus input) and the **20-batch panel simulation** (Haiku output). The biggest untapped saving is **prompt caching**, which the codebase does not currently use.
+
+*Pricing is list price as of this report's date; confirm against your current Anthropic rate card. Haiku 4.5 is a small fraction of the bill, so rate drift there barely moves the total — Opus pricing dominates.*

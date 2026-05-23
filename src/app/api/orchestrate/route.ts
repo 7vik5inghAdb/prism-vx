@@ -1,10 +1,10 @@
 export const maxDuration = 60;
 
 import { NextRequest, NextResponse } from "next/server";
-import { callLLM, parseJSON } from "@/lib/llm";
+import { callLLM, zodValidator } from "@/lib/llm";
 import { buildOrchestratorPrompt, ORCHESTRATOR_SYSTEM } from "@/lib/prompts";
 import { OrchestratorInterpretationSchema } from "@/lib/schemas";
-import type { ResearchContext } from "@/types";
+import type { ResearchContext, OrchestratorInterpretation } from "@/types";
 
 export async function POST(req: NextRequest) {
   try {
@@ -39,19 +39,22 @@ export async function POST(req: NextRequest) {
       }));
     const imageInputs = [...referenceImages, ...variantImages];
 
-    const response = await callLLM({
+    const response = await callLLM<OrchestratorInterpretation>({
       systemPrompt: ORCHESTRATOR_SYSTEM,
       userPrompt,
       images: imageInputs.length > 0 ? imageInputs : undefined,
-      temperature: 0.3,
+      // 0.4 — interpretation should be predictable; small temperature reduces
+      // study-type misclassification across runs without going fully deterministic.
+      temperature: 0.4,
       maxTokens: 2000,
       step: "step1_orchestrate",
+      validate: zodValidator(
+        OrchestratorInterpretationSchema,
+        "orchestrator interpretation"
+      ),
     });
 
-    const parsed = parseJSON(response.text, "orchestrator interpretation");
-    const validated = OrchestratorInterpretationSchema.parse(parsed);
-
-    return NextResponse.json({ interpretation: validated });
+    return NextResponse.json({ interpretation: response.validatedValue });
   } catch (error) {
     console.error("Orchestrate API error:", error);
     const message = error instanceof Error ? error.message : "Unknown error";

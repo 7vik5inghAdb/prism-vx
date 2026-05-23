@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAppStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import {
@@ -14,7 +14,8 @@ import {
 import { Message } from "@/components/conversation/Message";
 import { EditableText } from "@/components/conversation/EditableText";
 import { MethodsCatalog } from "@/components/conversation/MethodsCatalog";
-import type { ResearchMethod, Question } from "@/types";
+import { getQuestionScope } from "@/types";
+import type { ResearchMethod, Question, QuestionScope } from "@/types";
 
 function QuestionRow({
   question,
@@ -29,10 +30,46 @@ function QuestionRow({
   onDelete: () => void;
   variantsLabel?: string;
 }) {
-  const styles = {
+  const styles: Record<
+    Question["type"],
+    { bg: string; text: string; label: string }
+  > = {
+    // Question-type badge palette: navy-adjacent for closed/structured items
+    // (sky), green for open/qualitative items (replaces the old harvest), and
+    // magenta for advanced/structured trade-offs.
     likert: { bg: "bg-sky/10", text: "text-sky", label: "LIKERT" },
     rating: { bg: "bg-sky/10", text: "text-sky", label: "RATING" },
-    open_ended: { bg: "bg-harvest/10", text: "text-harvest", label: "OPEN" },
+    open_ended: { bg: "bg-green-500/15", text: "text-green-500", label: "OPEN" },
+    forced_ranking: {
+      bg: "bg-magenta/10",
+      text: "text-magenta",
+      label: "RANKING",
+    },
+    allocation: {
+      bg: "bg-magenta/10",
+      text: "text-magenta",
+      label: "ALLOCATION",
+    },
+    semantic_differential: {
+      bg: "bg-magenta/10",
+      text: "text-magenta",
+      label: "SEM DIFF",
+    },
+    multiple_choice: { bg: "bg-sky/10", text: "text-sky", label: "MC" },
+    matrix: { bg: "bg-sky/10", text: "text-sky", label: "MATRIX" },
+    sentence_completion: {
+      bg: "bg-green-500/15",
+      text: "text-green-500",
+      label: "SENTENCE",
+    },
+    word_association: {
+      bg: "bg-green-500/15",
+      text: "text-green-500",
+      label: "WORD ASSOC",
+    },
+    scenario: { bg: "bg-green-500/15", text: "text-green-500", label: "SCENARIO" },
+    yes_no_why: { bg: "bg-green-500/15", text: "text-green-500", label: "Y/N+WHY" },
+    nps: { bg: "bg-sky/10", text: "text-sky", label: "NPS" },
   };
   const style = styles[question.type];
 
@@ -53,29 +90,11 @@ function QuestionRow({
             {style.label}
           </span>
           {variantsLabel && (
-            <button
-              onClick={() =>
-                onUpdate({
-                  ...question,
-                  perVariant: !question.perVariant,
-                } as Question)
-              }
-              className={cn(
-                "text-[8px] font-bold px-1.5 py-0.5 rounded transition-all hover:scale-105",
-                question.perVariant
-                  ? "bg-magenta/15 text-magenta border border-magenta/40"
-                  : "neu-pill text-ink-low"
-              )}
-              title={
-                question.perVariant
-                  ? `Asked once per ${variantsLabel.toLowerCase()} — click to make cross-${variantsLabel.toLowerCase()}`
-                  : `Asked once total — click to make per-${variantsLabel.toLowerCase()}`
-              }
-            >
-              {question.perVariant
-                ? `PER-${variantsLabel.toUpperCase()}`
-                : `CROSS-${variantsLabel.toUpperCase()}`}
-            </button>
+            <ScopeButton
+              question={question}
+              variantsLabel={variantsLabel}
+              onUpdate={onUpdate}
+            />
           )}
           {question.type === "rating" && (
             <span className="text-[9px] text-ink-low">
@@ -89,6 +108,56 @@ function QuestionRow({
           multiline
           textClassName="text-[12px] text-ink-high leading-relaxed"
         />
+        {/* Answer options / scale — so the reviewer sees the full question */}
+        {question.type === "multiple_choice" && (
+          <div className="mt-1.5 flex flex-wrap gap-1">
+            {question.options.map((opt, i) => (
+              <span
+                key={i}
+                className="text-[9px] text-ink-mid bg-bg-inset border border-line rounded px-1.5 py-0.5"
+              >
+                {opt}
+              </span>
+            ))}
+            {question.multiSelect && (
+              <span className="text-[9px] text-ink-dim italic self-center">
+                · select all that apply
+              </span>
+            )}
+          </div>
+        )}
+        {question.type === "likert" && (
+          <div className="mt-1.5 flex flex-wrap gap-1">
+            {question.scale.map((s, i) => (
+              <span
+                key={i}
+                className="text-[9px] text-ink-mid bg-bg-inset border border-line rounded px-1.5 py-0.5"
+              >
+                {s}
+              </span>
+            ))}
+          </div>
+        )}
+        {question.type === "rating" && (
+          <p className="mt-1.5 text-[9px] text-ink-low">
+            Scale {question.min}–{question.max}
+            {question.minLabel ? ` · ${question.min} = ${question.minLabel}` : ""}
+            {question.maxLabel ? ` · ${question.max} = ${question.maxLabel}` : ""}
+          </p>
+        )}
+        {(question.type === "forced_ranking" ||
+          question.type === "allocation") && (
+          <div className="mt-1.5 flex flex-wrap gap-1">
+            {question.items.map((it, i) => (
+              <span
+                key={i}
+                className="text-[9px] text-ink-mid bg-bg-inset border border-line rounded px-1.5 py-0.5"
+              >
+                {it}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
       <button
         onClick={onDelete}
@@ -97,6 +166,57 @@ function QuestionRow({
         <X className="w-3 h-3" />
       </button>
     </div>
+  );
+}
+
+function ScopeButton({
+  question,
+  variantsLabel,
+  onUpdate,
+}: {
+  question: Question;
+  variantsLabel: string;
+  onUpdate: (q: Question) => void;
+}) {
+  const currentScope = getQuestionScope(question);
+  const nextScope: Record<QuestionScope, QuestionScope> = {
+    per_variant: "cross_variant",
+    cross_variant: "general",
+    general: "per_variant",
+  };
+  const labels: Record<QuestionScope, string> = {
+    per_variant: `PER-${variantsLabel.toUpperCase()}`,
+    cross_variant: `CROSS-${variantsLabel.toUpperCase()}`,
+    general: "GENERAL",
+  };
+  const titles: Record<QuestionScope, string> = {
+    per_variant: `Asked once per ${variantsLabel.toLowerCase()} — click to cycle`,
+    cross_variant: `Asked once after all ${variantsLabel.toLowerCase()}s seen — click to cycle`,
+    general: `Independent of ${variantsLabel.toLowerCase()}s — click to cycle`,
+  };
+  const cls: Record<QuestionScope, string> = {
+    per_variant: "bg-magenta/15 text-magenta border border-magenta/40",
+    cross_variant: "neu-pill text-ink-mid",
+    general: "bg-sky/10 text-sky border border-sky/30",
+  };
+  return (
+    <button
+      onClick={() =>
+        onUpdate({
+          ...question,
+          scope: nextScope[currentScope],
+          // clear the legacy field so it doesn't disagree with `scope`
+          perVariant: undefined,
+        } as Question)
+      }
+      className={cn(
+        "text-[8px] font-bold px-1.5 py-0.5 rounded transition-all hover:scale-105",
+        cls[currentScope]
+      )}
+      title={titles[currentScope]}
+    >
+      {labels[currentScope]}
+    </button>
   );
 }
 
@@ -126,17 +246,17 @@ function QuestionCountGuardrail({
       className={cn(
         "px-4 py-2 border-b border-line text-[11px] flex items-start gap-2",
         overCap
-          ? "bg-yellow/10 border-yellow/30 text-yellow"
+          ? "bg-amber-500/10 border-amber-500/30 text-amber-500"
           : "bg-bg-deep/40 text-ink-mid"
       )}
     >
-      {overCap && <span className="text-yellow flex-shrink-0">⚠</span>}
+      {overCap && <span className="text-amber-500 flex-shrink-0">!</span>}
       <div className="flex-1">
         <span className="font-semibold">
           {perVariantCount} per-{instrument.variants.label.toLowerCase()} × {variantCount} {instrument.variants.label.toLowerCase()}s
           {crossCount > 0 ? ` + ${crossCount} cross-${instrument.variants.label.toLowerCase()}` : ""}
           {" = "}
-          <span className={overCap ? "text-yellow" : "text-magenta"}>
+          <span className={overCap ? "text-amber-500" : "text-magenta"}>
             {totalAsked} questions per respondent
           </span>
         </span>
@@ -170,6 +290,38 @@ export function Step3Instrument() {
   const [pendingMethod, setPendingMethod] = useState<ResearchMethod | null>(
     selectedMethod
   );
+
+  const autoRunEnabled = useAppStore((s) => s.autoRunEnabled);
+
+  // Auto-run: on mount, pick a method from interpretation.studyType and
+  // generate the instrument. Variant-comparison / concept-test studies use
+  // the concept_test method (which fires the concept-test battery); other
+  // studies default to survey. Off when the user has disabled auto-run —
+  // they'll pick a method themselves from the methods catalog.
+  useEffect(() => {
+    if (!autoRunEnabled) return;
+    if (instrument || isLoading || error) return;
+    if (pendingMethod || selectedMethod) return; // already picked
+    if (!context || !interpretation || !personas) return;
+    const studyType = interpretation.studyType;
+    const inferredMethod: ResearchMethod =
+      studyType === "concept_test" ||
+      studyType === "variant_comparison" ||
+      studyType === "positioning_test"
+        ? "concept_test"
+        : "survey";
+    setPendingMethod(inferredMethod);
+    handleGenerateInstrument(inferredMethod);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoRunEnabled]);
+
+  // Auto-run: once the instrument lands, advance to Step 4.
+  useEffect(() => {
+    if (!autoRunEnabled) return;
+    if (instrument && !isLoading) {
+      advanceToStep(4);
+    }
+  }, [instrument, isLoading, advanceToStep, autoRunEnabled]);
 
   async function handleGenerateInstrument(method: ResearchMethod) {
     if (!context || !interpretation || !personas) return;
@@ -226,38 +378,153 @@ export function Step3Instrument() {
   function addQuestion(type: Question["type"]) {
     if (!instrument) return;
     const newId = `q_${Date.now()}`;
+    const baseScope: QuestionScope = instrument.variants
+      ? "cross_variant"
+      : "general";
     let newQ: Question;
-    if (type === "likert") {
-      newQ = {
-        id: newId,
-        type: "likert",
-        text: "New question — click to edit",
-        scale: [
-          "Strongly Disagree",
-          "Disagree",
-          "Neutral",
-          "Agree",
-          "Strongly Agree",
-        ],
-      };
-    } else if (type === "rating") {
-      newQ = {
-        id: newId,
-        type: "rating",
-        text: "New rating question — click to edit",
-        min: 1,
-        max: 5,
-        minLabel: "Low",
-        maxLabel: "High",
-      };
-    } else {
-      newQ = {
-        id: newId,
-        type: "open_ended",
-        text: "New open-ended question — click to edit",
-      };
+    switch (type) {
+      case "likert":
+        newQ = {
+          id: newId,
+          type,
+          scope: baseScope,
+          text: "New Likert question — click to edit",
+          scale: [
+            "Strongly Disagree",
+            "Disagree",
+            "Neutral",
+            "Agree",
+            "Strongly Agree",
+          ],
+        };
+        break;
+      case "rating":
+        newQ = {
+          id: newId,
+          type,
+          scope: baseScope,
+          text: "New rating question — click to edit",
+          min: 1,
+          max: 5,
+          minLabel: "Low",
+          maxLabel: "High",
+        };
+        break;
+      case "open_ended":
+        newQ = {
+          id: newId,
+          type,
+          scope: baseScope,
+          text: "New open-ended question — click to edit",
+        };
+        break;
+      case "forced_ranking":
+        newQ = {
+          id: newId,
+          type,
+          scope: baseScope,
+          text: "Rank these items from most to least important",
+          items: ["Option A", "Option B", "Option C"],
+        };
+        break;
+      case "allocation":
+        newQ = {
+          id: newId,
+          type,
+          scope: baseScope,
+          text: "Distribute 100 points across these items by importance",
+          items: ["Option A", "Option B", "Option C"],
+          totalPoints: 100,
+        };
+        break;
+      case "semantic_differential":
+        newQ = {
+          id: newId,
+          type,
+          scope: baseScope,
+          text: "Where does this land on each dimension?",
+          pairs: [
+            { left: "Simple", right: "Complex" },
+            { left: "Friendly", right: "Cold" },
+          ],
+          steps: 7,
+        };
+        break;
+      case "multiple_choice":
+        newQ = {
+          id: newId,
+          type,
+          scope: baseScope,
+          text: "Which best describes your primary use case?",
+          options: ["Option A", "Option B", "Option C", "Option D"],
+          multiSelect: false,
+        };
+        break;
+      case "matrix":
+        newQ = {
+          id: newId,
+          type,
+          scope: baseScope,
+          text: "Rate each item on each dimension",
+          items: ["Feature 1", "Feature 2", "Feature 3"],
+          dimensions: ["Usefulness", "Ease of use", "Likelihood to use"],
+          scale: 5,
+        };
+        break;
+      case "sentence_completion":
+        newQ = {
+          id: newId,
+          type,
+          scope: baseScope,
+          text: "Complete each sentence",
+          stems: [
+            "When I think of this product, the first word is ___.",
+            "I would use this when ___.",
+          ],
+        };
+        break;
+      case "word_association":
+        newQ = {
+          id: newId,
+          type,
+          scope: baseScope,
+          text: "What three words come to mind for each prompt?",
+          stimuli: ["This product"],
+          wordCount: 3,
+        };
+        break;
+      case "scenario":
+        newQ = {
+          id: newId,
+          type,
+          scope: baseScope,
+          text: "What would you do in this scenario?",
+          scenarioText: "Describe a concrete situation here…",
+          followUp: "What do you do?",
+        };
+        break;
+      case "yes_no_why":
+        newQ = {
+          id: newId,
+          type,
+          scope: baseScope,
+          text: "Would you use this?",
+          requireWhy: true,
+        };
+        break;
+      case "nps":
+        newQ = {
+          id: newId,
+          type,
+          scope: baseScope,
+          text: "How likely are you to recommend this to a colleague (0-10)?",
+        };
+        break;
     }
-    setInstrument({ ...instrument, questions: [...instrument.questions, newQ] });
+    setInstrument({
+      ...instrument,
+      questions: [...instrument.questions, newQ],
+    });
   }
 
   return (
@@ -373,7 +640,7 @@ export function Step3Instrument() {
                       {instrument.variants.items.map((v) => (
                         <span
                           key={v.id}
-                          className="text-[10px] bg-yellow/10 text-yellow px-1.5 py-0.5 rounded border border-yellow/30"
+                          className="text-[10px] bg-magenta/10 text-magenta px-1.5 py-0.5 rounded border border-magenta/30"
                           title={v.text}
                         >
                           {v.text.length > 25
@@ -394,8 +661,91 @@ export function Step3Instrument() {
 
                 <QuestionCountGuardrail instrument={instrument} />
 
+                <div className="px-3 py-2 border-b border-line bg-bg-raised flex gap-1 flex-wrap items-center">
+                  <span className="text-[10px] text-ink-low self-center mr-1 font-semibold">
+                    + Add:
+                  </span>
+                  <button
+                    onClick={() => addQuestion("likert")}
+                    className="text-[10px] text-sky bg-sky/10 hover:bg-sky/15 px-1.5 py-0.5 rounded font-semibold"
+                  >
+                    Likert
+                  </button>
+                  <button
+                    onClick={() => addQuestion("rating")}
+                    className="text-[10px] text-sky bg-sky/10 hover:bg-sky/15 px-1.5 py-0.5 rounded font-semibold"
+                  >
+                    Rating
+                  </button>
+                  <button
+                    onClick={() => addQuestion("open_ended")}
+                    className="text-[10px] text-green-500 bg-green-500/15 hover:bg-green-500/20 px-1.5 py-0.5 rounded font-semibold"
+                  >
+                    Open-ended
+                  </button>
+                  <button
+                    onClick={() => addQuestion("forced_ranking")}
+                    className="text-[10px] text-magenta bg-magenta/10 hover:bg-magenta/15 px-1.5 py-0.5 rounded font-semibold"
+                  >
+                    Ranking
+                  </button>
+                  <button
+                    onClick={() => addQuestion("allocation")}
+                    className="text-[10px] text-magenta bg-magenta/10 hover:bg-magenta/15 px-1.5 py-0.5 rounded font-semibold"
+                  >
+                    Allocation
+                  </button>
+                  <button
+                    onClick={() => addQuestion("semantic_differential")}
+                    className="text-[10px] text-magenta bg-magenta/10 hover:bg-magenta/15 px-1.5 py-0.5 rounded font-semibold"
+                  >
+                    Sem Diff
+                  </button>
+                  <button
+                    onClick={() => addQuestion("multiple_choice")}
+                    className="text-[10px] text-sky bg-sky/10 hover:bg-sky/15 px-1.5 py-0.5 rounded font-semibold"
+                  >
+                    MC
+                  </button>
+                  <button
+                    onClick={() => addQuestion("matrix")}
+                    className="text-[10px] text-sky bg-sky/10 hover:bg-sky/15 px-1.5 py-0.5 rounded font-semibold"
+                  >
+                    Matrix
+                  </button>
+                  <button
+                    onClick={() => addQuestion("sentence_completion")}
+                    className="text-[10px] text-green-500 bg-green-500/15 hover:bg-green-500/20 px-1.5 py-0.5 rounded font-semibold"
+                  >
+                    Sentence
+                  </button>
+                  <button
+                    onClick={() => addQuestion("word_association")}
+                    className="text-[10px] text-green-500 bg-green-500/15 hover:bg-green-500/20 px-1.5 py-0.5 rounded font-semibold"
+                  >
+                    Word Assoc
+                  </button>
+                  <button
+                    onClick={() => addQuestion("scenario")}
+                    className="text-[10px] text-green-500 bg-green-500/15 hover:bg-green-500/20 px-1.5 py-0.5 rounded font-semibold"
+                  >
+                    Scenario
+                  </button>
+                  <button
+                    onClick={() => addQuestion("yes_no_why")}
+                    className="text-[10px] text-green-500 bg-green-500/15 hover:bg-green-500/20 px-1.5 py-0.5 rounded font-semibold"
+                  >
+                    Y/N+Why
+                  </button>
+                  <button
+                    onClick={() => addQuestion("nps")}
+                    className="text-[10px] text-sky bg-sky/10 hover:bg-sky/15 px-1.5 py-0.5 rounded font-semibold"
+                  >
+                    NPS
+                  </button>
+                </div>
 
-                <div className="max-h-72 overflow-y-auto">
+                <div className="max-h-96 overflow-y-auto">
                   {instrument.questions.map((q, i) => (
                     <QuestionRow
                       key={q.id}
@@ -406,30 +756,6 @@ export function Step3Instrument() {
                       variantsLabel={instrument.variants?.label}
                     />
                   ))}
-                </div>
-
-                <div className="px-3 py-2 border-t border-line bg-bg-raised flex gap-1.5 flex-wrap">
-                  <span className="text-[10px] text-ink-low self-center mr-1">
-                    Add:
-                  </span>
-                  <button
-                    onClick={() => addQuestion("likert")}
-                    className="text-[10px] text-sky bg-sky/10 hover:bg-sky/15 px-2 py-1 rounded font-semibold flex items-center gap-1"
-                  >
-                    <Plus className="w-2.5 h-2.5" /> Likert
-                  </button>
-                  <button
-                    onClick={() => addQuestion("rating")}
-                    className="text-[10px] text-sky bg-sky/10 hover:bg-sky/15 px-2 py-1 rounded font-semibold flex items-center gap-1"
-                  >
-                    <Plus className="w-2.5 h-2.5" /> Rating
-                  </button>
-                  <button
-                    onClick={() => addQuestion("open_ended")}
-                    className="text-[10px] text-harvest bg-harvest/10 hover:bg-harvest/15 px-2 py-1 rounded font-semibold flex items-center gap-1"
-                  >
-                    <Plus className="w-2.5 h-2.5" /> Open-ended
-                  </button>
                 </div>
               </div>
             }

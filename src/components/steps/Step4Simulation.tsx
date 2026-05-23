@@ -25,6 +25,7 @@ const BATCH_SIZE = 5;
 export function Step4Simulation() {
   const {
     context,
+    interpretation,
     selectedMethod,
     personas,
     instrument,
@@ -47,16 +48,52 @@ export function Step4Simulation() {
     retryCurrentStep,
   } = useAppStore();
 
+  const autoRunEnabled = useAppStore((s) => s.autoRunEnabled);
   const hasStarted = useRef(false);
   const [stage, setStage] = useState<"configure" | "running" | "complete">(
     panelResults ? "complete" : "configure"
   );
 
-  const panelSize =
-    selectedMethod === "survey" ? surveyPanelSize : interviewPanelSize;
+  // Auto-run: kick off the simulation as soon as prerequisites are ready,
+  // forcing the minimum panel size (10 survey / 3 interview) so demos finish
+  // quickly. When auto-run is off the user clicks Start with their own size.
+  useEffect(() => {
+    if (!autoRunEnabled) return;
+    if (hasStarted.current) return;
+    if (panelResults || isLoading || error) return;
+    if (!selectedMethod || !personas || !instrument) return;
+    if (selectedMethod === "interview") setInterviewPanelSize(3);
+    else setSurveyPanelSize(10);
+    startSimulation();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    selectedMethod,
+    personas,
+    instrument,
+    panelResults,
+    isLoading,
+    error,
+    autoRunEnabled,
+  ]);
+
+  // Auto-run: when the panel finishes, advance to Step 5 (synthesis runs there).
+  useEffect(() => {
+    if (!autoRunEnabled) return;
+    if (stage === "complete" && panelResults) {
+      const t = setTimeout(() => advanceToStep(5), 600);
+      return () => clearTimeout(t);
+    }
+  }, [stage, panelResults, advanceToStep, autoRunEnabled]);
+
+  // Treat every non-interview method (survey/maxdiff/kano/conjoint/concept_test)
+  // as survey-style for panel-size purposes. The previous `=== "survey"` check
+  // routed MaxDiff writes into interviewPanelSize while the runner read from
+  // surveyPanelSize — UI showed 10, simulator ran 100.
+  const isSurveyStyle = selectedMethod !== "interview";
+  const panelSize = isSurveyStyle ? surveyPanelSize : interviewPanelSize;
 
   function setPanelSize(v: number) {
-    if (selectedMethod === "survey") setSurveyPanelSize(v);
+    if (isSurveyStyle) setSurveyPanelSize(v);
     else setInterviewPanelSize(v);
   }
 
@@ -71,12 +108,17 @@ export function Step4Simulation() {
     if (!selectedMethod || !personas || !instrument) return;
     setLoading(true, "Starting panel simulation...");
 
-    if (selectedMethod === "survey") await runSurveySimulation();
-    else await runInterviewSimulation();
+    // Non-interview methods (survey, maxdiff, kano, conjoint, concept_test)
+    // all run through the survey-style simulator at this layer.
+    if (selectedMethod === "interview") await runInterviewSimulation();
+    else await runSurveySimulation();
   }
 
   async function runSurveySimulation() {
-    const total = surveyPanelSize;
+    // Read directly from the store so an auto-run panel-size override applied
+    // moments earlier (e.g. setSurveyPanelSize(10)) is seen — the closure
+    // would otherwise hold the previous render's value.
+    const total = useAppStore.getState().surveyPanelSize;
     const totalBatches = Math.ceil(total / BATCH_SIZE);
     const collected: SurveyRespondent[] = [];
 
@@ -111,6 +153,8 @@ export function Step4Simulation() {
               personas,
               instrument,
               context, // includes per-variant image content for vision
+              evaluationSubject: interpretation?.evaluationSubject,
+              studyType: interpretation?.studyType,
               batchIndex,
               panelSize: total,
             }),
@@ -173,7 +217,8 @@ export function Step4Simulation() {
   }
 
   async function runInterviewSimulation() {
-    const total = interviewPanelSize;
+    // See runSurveySimulation comment — read fresh to honor auto-run overrides.
+    const total = useAppStore.getState().interviewPanelSize;
     const collected: InterviewRespondent[] = [];
 
     for (let i = 0; i < total; i++) {
@@ -194,6 +239,8 @@ export function Step4Simulation() {
             personas,
             instrument,
             context,
+            evaluationSubject: interpretation?.evaluationSubject,
+            studyType: interpretation?.studyType,
             respondentIndex: i,
             panelSize: total,
           }),
@@ -232,7 +279,7 @@ export function Step4Simulation() {
         Time to run the synthetic panel. How large should the panel be? I&rsquo;d
         recommend{" "}
         <span className="font-semibold">
-          {selectedMethod === "survey" ? "100" : "3"}
+          {selectedMethod === "interview" ? "3" : "100"}
         </span>{" "}
         based on your method, but you can adjust.
       </Message>
@@ -382,7 +429,7 @@ function SimulationView({
     <div className="neu-card-sm rounded-xl overflow-hidden">
       {/* Progress header */}
       {progress && stage === "running" && (
-        <div className="px-4 py-3 border-b border-line bg-gradient-to-r from-prism-50 to-white">
+        <div className="px-4 py-3 border-b border-line bg-bg-raised">
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-xs font-semibold text-ink-mid">
               {progress.currentBatch ?? "Starting..."}

@@ -12,6 +12,20 @@ import {
   TrendingUpIcon,
   AlertTriangleIcon,
 } from "lucide-react";
+import dynamic from "next/dynamic";
+
+const VariantPerformanceChart = dynamic(
+  () => import("@/components/charts/VariantPerformanceChart"),
+  { ssr: false }
+);
+const RatingDistributionChart = dynamic(
+  () => import("@/components/charts/RatingDistributionChart"),
+  { ssr: false }
+);
+const ParticipantProfileCharts = dynamic(
+  () => import("@/components/charts/ParticipantProfileCharts"),
+  { ssr: false }
+);
 
 function SectionHeader({
   icon: Icon,
@@ -39,18 +53,60 @@ function SectionHeader({
   );
 }
 
+/** Renders a variant's uploaded image inline, with a graceful placeholder when
+ *  the base64 content has been stripped by `slimContext` (post-autosave reload). */
+function VariantImage({
+  context,
+  variantId,
+  variantText,
+}: {
+  context: import("@/types").ResearchContext | null;
+  variantId: string;
+  variantText: string;
+}) {
+  const v = context?.variants?.find(
+    (c) => c.id === variantId || c.description === variantText
+  );
+  const img = v?.image;
+  if (!img) return null;
+  if (img.content) {
+    return (
+      <img
+        src={img.content}
+        alt={variantText}
+        className="max-w-[220px] rounded-md border border-line mt-2 shadow-sm"
+      />
+    );
+  }
+  return (
+    <div className="mt-2 text-[10px] text-ink-dim italic">
+      Image attached ({img.name}) — preview unavailable after autosave reload.
+    </div>
+  );
+}
+
 function ConfidenceGauge({ score }: { score: number }) {
+  // Tier coloring aligned with the PDF confidenceColor() semantics:
+  // green (high confidence) / amber (mid) / red (low). Reads conventionally.
   const tier = score >= 70 ? "good" : score >= 50 ? "mid" : "low";
   const text =
-    tier === "good" ? "text-sky" : tier === "mid" ? "text-yellow" : "text-scarlet";
+    tier === "good"
+      ? "text-green-500"
+      : tier === "mid"
+        ? "text-amber-500"
+        : "text-red-500";
   const glow =
     tier === "good"
-      ? "shadow-glow-sky"
+      ? "shadow-glow-green"
       : tier === "mid"
-      ? "shadow-glow-yellow"
-      : "shadow-glow-scarlet";
+        ? "shadow-glow-magenta"
+        : "shadow-glow-red";
   const bar =
-    tier === "good" ? "bg-sky" : tier === "mid" ? "bg-yellow" : "bg-scarlet";
+    tier === "good"
+      ? "bg-green-500"
+      : tier === "mid"
+        ? "bg-amber-500"
+        : "bg-red-500";
 
   return (
     <div className={cn("rounded-xl p-4 neu-card", glow)}>
@@ -151,11 +207,11 @@ export function ReportPanel() {
                     </div>
                   )}
                   {interpretation.successCriteria && (
-                    <div className="bg-yellow/10 border border-yellow/30 rounded-lg p-3">
-                      <p className="text-[10px] font-bold text-yellow uppercase tracking-wider mb-1">
+                    <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3">
+                      <p className="text-[10px] font-bold text-amber-500 uppercase tracking-wider mb-1">
                         Success Criteria
                       </p>
-                      <p className="text-xs text-yellow/90 leading-relaxed">
+                      <p className="text-xs text-amber-500/90 leading-relaxed">
                         {interpretation.successCriteria}
                       </p>
                     </div>
@@ -191,10 +247,14 @@ export function ReportPanel() {
             )}
 
             {/* Divider */}
-            {personas && <div className="border-t border-dashed border-line" />}
+            {personas && currentStep >= 2 && (
+              <div className="border-t border-dashed border-line" />
+            )}
 
-            {/* Step 2: Personas */}
-            {personas && (
+            {/* Step 2: Personas — gated on currentStep so the report builds
+                progressively (matters in playback, where all data is loaded
+                up front but the user clicks through step by step). */}
+            {personas && currentStep >= 2 && (
               <div className="report-section">
                 <SectionHeader icon={UserIcon} title="Persona Clusters" step={2} />
                 <div className="space-y-2">
@@ -231,7 +291,7 @@ export function ReportPanel() {
             )}
 
             {/* Step 3: Instrument */}
-            {instrument && (
+            {instrument && currentStep >= 3 && (
               <>
                 <div className="border-t border-dashed border-line" />
                 <div className="report-section">
@@ -269,7 +329,7 @@ export function ReportPanel() {
                                 q.type === "rating" &&
                                   "bg-sky/15 text-sky",
                                 q.type === "open_ended" &&
-                                  "bg-harvest/15 text-harvest"
+                                  "bg-green-500/15 text-green-500"
                               )}
                             >
                               {q.type === "likert"
@@ -296,7 +356,7 @@ export function ReportPanel() {
             )}
 
             {/* Step 4: Simulation progress or complete */}
-            {(simulationProgress || panelResults) && (
+            {(simulationProgress || panelResults) && currentStep >= 4 && (
               <>
                 <div className="border-t border-dashed border-line" />
                 <div className="report-section">
@@ -347,7 +407,7 @@ export function ReportPanel() {
             )}
 
             {/* Step 5: Full Report */}
-            {report && (
+            {report && currentStep >= 5 && (
               <>
                 <div className="border-t border-dashed border-line" />
                 <div className="report-section">
@@ -425,6 +485,11 @@ export function ReportPanel() {
                           </tbody>
                         </table>
                       </div>
+                      <div className="mt-3 neu-card-sm rounded-lg p-3">
+                        <ParticipantProfileCharts
+                          profile={report.participantProfile}
+                        />
+                      </div>
                       {(report.participantProfile.meanAge ||
                         report.participantProfile.languageDistribution) && (
                         <div className="mt-2 grid grid-cols-2 gap-2 text-[10px]">
@@ -455,50 +520,34 @@ export function ReportPanel() {
                       <p className="text-[10px] font-semibold text-ink-low uppercase tracking-wider mb-2">
                         {report.variantPerformance.length} Variants Tested · Performance
                       </p>
-                      <div className="neu-card-sm rounded-lg overflow-hidden">
-                        <table className="w-full text-[10px]">
-                          <thead className="bg-bg-raised">
-                            <tr className="border-b border-line">
-                              <th className="text-left px-2 py-1.5 font-bold text-ink-low uppercase tracking-wider">
-                                Variant
-                              </th>
-                              <th className="text-right px-2 py-1.5 font-bold text-ink-low uppercase tracking-wider">
-                                Avg
-                              </th>
-                              <th className="text-right px-2 py-1.5 font-bold text-ink-low uppercase tracking-wider">
-                                Intent
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {[...report.variantPerformance]
-                              .sort((a, b) => b.averageRating - a.averageRating)
-                              .map((vp, i) => (
-                                <tr
-                                  key={vp.variantId}
-                                  className="border-b border-line last:border-0"
-                                >
-                                  <td className="px-2 py-1.5">
-                                    <span className="text-magenta font-bold mr-1">
-                                      #{i + 1}
-                                    </span>
-                                    <span className="text-ink-mid font-medium">
-                                      {vp.variantText}
-                                    </span>
-                                  </td>
-                                  <td className="px-2 py-1.5 text-right font-bold text-ink-high">
-                                    {vp.averageRating.toFixed(2)}
-                                  </td>
-                                  <td className="px-2 py-1.5 text-right text-ink-mid">
-                                    {Math.round(vp.interestPercent)}%
-                                  </td>
-                                </tr>
-                              ))}
-                          </tbody>
-                        </table>
+                      <div className="neu-card-sm rounded-lg p-3">
+                        <VariantPerformanceChart
+                          variants={report.variantPerformance}
+                        />
+                        <p className="text-[9px] text-ink-dim mt-1">
+                          Bar length = average rating (0–5). Hover for intent to
+                          try.
+                        </p>
                       </div>
                     </div>
                   )}
+
+                  {/* Rating Distribution (ADRS) */}
+                  {report.variantPerformance &&
+                    report.variantPerformance.some(
+                      (vp) => vp.ratingDistribution.length > 0
+                    ) && (
+                      <div className="mb-4">
+                        <p className="text-[10px] font-semibold text-ink-low uppercase tracking-wider mb-2">
+                          Rating Distribution
+                        </p>
+                        <div className="neu-card-sm rounded-lg p-3">
+                          <RatingDistributionChart
+                            variants={report.variantPerformance}
+                          />
+                        </div>
+                      </div>
+                    )}
 
                   {/* Detailed variant analysis */}
                   {report.variantPerformance && (
@@ -526,6 +575,11 @@ export function ReportPanel() {
                               </div>
                             </summary>
                             <div className="px-3 pb-3 space-y-2">
+                              <VariantImage
+                                context={context}
+                                variantId={vp.variantId}
+                                variantText={vp.variantText}
+                              />
                               <p className="text-[11px] text-ink-mid leading-relaxed mt-2">
                                 {vp.narrative}
                               </p>
@@ -755,7 +809,7 @@ function SentimentBadge({
   const styles = {
     positive: "bg-sky/15 text-sky border border-sky/30",
     negative: "bg-scarlet/15 text-scarlet border border-scarlet/30",
-    mixed: "bg-yellow/15 text-yellow border border-yellow/30",
+    mixed: "bg-amber-500/15 text-amber-500 border border-amber-500/30",
     neutral: "bg-bg-elevated text-ink-mid border border-line",
   };
   return (

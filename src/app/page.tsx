@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAppStore } from "@/lib/store";
 import { ReportPanel } from "@/components/panels/ReportPanel";
 import { ConversationPanel } from "@/components/panels/ConversationPanel";
@@ -13,18 +13,41 @@ import {
   RefreshCwIcon,
   FolderOpen,
   Save,
-  PanelRightOpen,
-  PanelRightClose,
+  Sun,
+  Moon,
+  Zap,
+  ZapOff,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function Home() {
-  const { resetAll, pipelineOpen, togglePipeline, currentRunName, context } =
-    useAppStore();
+  const {
+    resetAll,
+    pipelineOpen,
+    currentRunName,
+    context,
+    autoRunEnabled,
+    setAutoRunEnabled,
+  } = useAppStore();
   const [savedOpen, setSavedOpen] = useState(false);
   const [saveOpen, setSaveOpen] = useState(false);
 
   const canSave = !!context;
+
+  // Theme: dark default; persists via localStorage; applied as data-theme attr
+  const [theme, setTheme] = useState<"light" | "dark">("dark");
+  useEffect(() => {
+    const saved =
+      typeof window !== "undefined"
+        ? (localStorage.getItem("prism_theme") as "light" | "dark" | null)
+        : null;
+    if (saved === "light" || saved === "dark") setTheme(saved);
+  }, []);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    document.documentElement.dataset.theme = theme;
+    localStorage.setItem("prism_theme", theme);
+  }, [theme]);
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-bg-base">
@@ -55,7 +78,7 @@ export default function Home() {
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-[10px] text-harvest neu-pill px-2 py-0.5 rounded font-bold tracking-wider">
+          <span className="text-[10px] text-sky neu-pill px-2 py-0.5 rounded font-bold tracking-wider">
             SYNTHETIC RESEARCH · PREVIEW
           </span>
 
@@ -101,29 +124,64 @@ export default function Home() {
           </button>
 
           <button
-            onClick={togglePipeline}
-            className="text-ink-mid hover:text-magenta neu-button p-1.5 rounded-md transition-all ml-1"
-            title={pipelineOpen ? "Hide pipeline" : "Show pipeline"}
+            onClick={() => setAutoRunEnabled(!autoRunEnabled)}
+            className={cn(
+              "text-[10px] px-2 py-1 rounded-md flex items-center gap-1.5 font-bold transition-all uppercase tracking-wider",
+              autoRunEnabled
+                ? "text-magenta neu-card-sm border border-magenta/40"
+                : "text-ink-mid neu-button"
+            )}
+            title={
+              autoRunEnabled
+                ? "Auto-run is ON — pipeline advances itself with minimum panel sizes. Click to turn off."
+                : "Auto-run is OFF — confirm each step manually. Click to turn on."
+            }
           >
-            {pipelineOpen ? (
-              <PanelRightClose className="w-3.5 h-3.5" />
+            {autoRunEnabled ? (
+              <Zap className="w-3 h-3" />
             ) : (
-              <PanelRightOpen className="w-3.5 h-3.5" />
+              <ZapOff className="w-3 h-3" />
+            )}
+            Auto {autoRunEnabled ? "ON" : "OFF"}
+          </button>
+
+          <button
+            onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
+            className="text-ink-mid hover:text-magenta neu-button p-1.5 rounded-md transition-all"
+            title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+          >
+            {theme === "dark" ? (
+              <Sun className="w-3.5 h-3.5" />
+            ) : (
+              <Moon className="w-3.5 h-3.5" />
             )}
           </button>
         </div>
       </div>
 
-      {/* Three-panel layout */}
+      {/* Floating re-open tab — only visible when the pipeline is collapsed */}
+      {!pipelineOpen && (
+        <button
+          onClick={() => useAppStore.getState().togglePipeline()}
+          className="fixed left-0 top-1/2 -translate-y-1/2 z-30 neu-card-sm rounded-r-md border-l-0 px-1.5 py-3 hover:border-magenta/40 transition-all group"
+          title="Show pipeline"
+        >
+          <span className="block text-[9px] font-bold tracking-widest text-ink-mid group-hover:text-magenta uppercase" style={{ writingMode: "vertical-rl" }}>
+            Pipeline
+          </span>
+        </button>
+      )}
+
+      {/* Three-panel layout (mirrored: Pipeline · Conversation · Report) */}
       <div className="flex w-full h-full pt-12">
-        {/* Left: Report panel */}
+        {/* Left: Pipeline tracker (collapsible) */}
         <div
           className={cn(
-            "min-w-0 h-full flex-shrink-0 transition-all duration-400 ease-out",
-            pipelineOpen ? "w-[40%]" : "w-[44%]"
+            "h-full flex-shrink-0 overflow-hidden transition-all duration-400 ease-out",
+            pipelineOpen ? "w-[20%] min-w-[220px]" : "w-0 min-w-0"
           )}
         >
-          <ReportPanel />
+          <PipelineTracker />
         </div>
 
         {/* Center: Conversation panel */}
@@ -136,14 +194,14 @@ export default function Home() {
           <ConversationPanel />
         </div>
 
-        {/* Right: Pipeline tracker (collapsible) */}
+        {/* Right: Report panel */}
         <div
           className={cn(
-            "h-full flex-shrink-0 overflow-hidden transition-all duration-400 ease-out",
-            pipelineOpen ? "w-[20%] min-w-[220px]" : "w-0 min-w-0"
+            "min-w-0 h-full flex-shrink-0 transition-all duration-400 ease-out",
+            pipelineOpen ? "w-[40%]" : "w-[44%]"
           )}
         >
-          <PipelineTracker />
+          <ReportPanel />
         </div>
       </div>
 

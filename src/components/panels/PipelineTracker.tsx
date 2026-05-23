@@ -1,26 +1,33 @@
 "use client";
 
-import { CheckIcon, Eye } from "lucide-react";
+import { CheckIcon, Eye, PanelLeftClose } from "lucide-react";
 import { useAppStore } from "@/lib/store";
 import { STEP_INFO, type Step } from "@/types";
 import { cn } from "@/lib/utils";
 
 export function PipelineTracker() {
-  const { stepStatuses, expandedReviewStep, toggleReviewStep } = useAppStore();
-  const completedCount = Object.values(stepStatuses).filter(
-    (s) => s === "completed"
-  ).length;
+  const { stepStatuses, expandedReviewStep, toggleReviewStep, togglePipeline } =
+    useAppStore();
 
   return (
     <aside className="flex flex-col h-full bg-bg-deep relative">
-      {/* Header */}
-      <div className="px-5 py-4 border-b border-line">
-        <p className="text-[10px] font-bold text-ink-low uppercase tracking-widest">
-          Pipeline
-        </p>
-        <p className="text-[10px] text-ink-dim mt-0.5">
-          {Object.values(stepStatuses).filter((s) => s === "completed").length} of 5 complete
-        </p>
+      {/* Header with collapse button */}
+      <div className="px-5 py-4 border-b border-line flex items-start justify-between gap-2">
+        <div>
+          <p className="text-[10px] font-bold text-ink-low uppercase tracking-widest">
+            Pipeline
+          </p>
+          <p className="text-[10px] text-ink-dim mt-0.5">
+            {Object.values(stepStatuses).filter((s) => s === "completed").length} of 5 complete
+          </p>
+        </div>
+        <button
+          onClick={togglePipeline}
+          className="text-ink-low hover:text-magenta p-1 rounded transition-colors -mr-1"
+          title="Hide pipeline"
+        >
+          <PanelLeftClose className="w-3.5 h-3.5" />
+        </button>
       </div>
 
       {/* Pipeline steps */}
@@ -146,23 +153,9 @@ export function PipelineTracker() {
         </div>
       </div>
 
-      {/* Progress bar */}
-      <div className="px-4 py-4 border-t border-line">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-[10px] text-ink-low font-bold uppercase tracking-wider">
-            Progress
-          </span>
-          <span className="text-[10px] text-ink-mid font-bold">
-            {completedCount}/5
-          </span>
-        </div>
-        <div className="h-2 bg-bg-inset rounded-full overflow-hidden shadow-neu-inset">
-          <div
-            className="h-full bg-prism-gradient rounded-full transition-all duration-700 ease-out shadow-glow-magenta"
-            style={{ width: `${(completedCount / 5) * 100}%` }}
-          />
-        </div>
-        <p className="text-[9px] text-ink-dim text-center mt-3">
+      {/* Footer */}
+      <div className="px-4 py-3 border-t border-line">
+        <p className="text-[9px] text-ink-dim text-center">
           Forward-only flow
         </p>
       </div>

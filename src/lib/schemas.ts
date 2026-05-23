@@ -24,12 +24,16 @@ export const OrchestratorInterpretationSchema = z.object({
   ]),
   evaluationSubject: z.string().optional(),
   successCriteria: z.string().optional(),
+  // nullish (not optional): LLMs routinely emit `variants: null` for
+  // non-variant studies. `.optional()` rejects null, and the repair-retry
+  // loop then pushes the model to invent garbage variants. `.nullish()`
+  // accepts null/undefined alike — both mean "no variants".
   variants: z
     .object({
       label: z.string(),
       items: z.array(z.string()).min(2).max(8),
     })
-    .optional(),
+    .nullish(),
 });
 
 // ── Step 2 ────────────────────────────────────────────────────────────────────
@@ -79,44 +83,127 @@ export const PersonasSchema = z.object({
 
 // ── Step 3 ────────────────────────────────────────────────────────────────────
 
-const LikertQuestionSchema = z.object({
+// Fields shared by every question. `scope` is the authoritative new field;
+// `perVariant` is kept optional for back-compat with persisted state.
+const questionBaseFields = {
   id: z.string(),
-  type: z.literal("likert"),
   text: z.string().min(5),
-  scale: z.tuple([z.string(), z.string(), z.string(), z.string(), z.string()]),
+  scope: z.enum(["per_variant", "cross_variant", "general"]).optional(),
   perVariant: z.boolean().optional(),
+};
+
+const LikertQuestionSchema = z.object({
+  ...questionBaseFields,
+  type: z.literal("likert"),
+  scale: z.tuple([z.string(), z.string(), z.string(), z.string(), z.string()]),
 });
 
 const RatingQuestionSchema = z.object({
-  id: z.string(),
+  ...questionBaseFields,
   type: z.literal("rating"),
-  text: z.string().min(5),
   min: z.number(),
   max: z.number(),
   minLabel: z.string(),
   maxLabel: z.string(),
-  perVariant: z.boolean().optional(),
 });
 
 const OpenEndedQuestionSchema = z.object({
-  id: z.string(),
+  ...questionBaseFields,
   type: z.literal("open_ended"),
-  text: z.string().min(5),
   placeholder: z.string().optional(),
-  perVariant: z.boolean().optional(),
+});
+
+const ForcedRankingQuestionSchema = z.object({
+  ...questionBaseFields,
+  type: z.literal("forced_ranking"),
+  items: z.array(z.string()).min(2),
+});
+
+const AllocationQuestionSchema = z.object({
+  ...questionBaseFields,
+  type: z.literal("allocation"),
+  items: z.array(z.string()).min(2),
+  totalPoints: z.number().int().min(1),
+});
+
+const SemanticDifferentialQuestionSchema = z.object({
+  ...questionBaseFields,
+  type: z.literal("semantic_differential"),
+  pairs: z
+    .array(z.object({ left: z.string(), right: z.string() }))
+    .min(1),
+  steps: z.union([z.literal(5), z.literal(7)]),
+});
+
+const MultipleChoiceQuestionSchema = z.object({
+  ...questionBaseFields,
+  type: z.literal("multiple_choice"),
+  options: z.array(z.string()).min(2),
+  multiSelect: z.boolean(),
+});
+
+const MatrixQuestionSchema = z.object({
+  ...questionBaseFields,
+  type: z.literal("matrix"),
+  items: z.array(z.string()).min(1),
+  dimensions: z.array(z.string()).min(1),
+  scale: z.union([z.literal(5), z.literal(7)]),
+});
+
+const SentenceCompletionQuestionSchema = z.object({
+  ...questionBaseFields,
+  type: z.literal("sentence_completion"),
+  stems: z.array(z.string()).min(1),
+});
+
+const WordAssociationQuestionSchema = z.object({
+  ...questionBaseFields,
+  type: z.literal("word_association"),
+  stimuli: z.array(z.string()).min(1),
+  wordCount: z.number().int().min(1).max(10),
+});
+
+const ScenarioQuestionSchema = z.object({
+  ...questionBaseFields,
+  type: z.literal("scenario"),
+  scenarioText: z.string().min(10),
+  followUp: z.string().min(5),
+});
+
+const YesNoWhyQuestionSchema = z.object({
+  ...questionBaseFields,
+  type: z.literal("yes_no_why"),
+  requireWhy: z.boolean(),
+});
+
+const NPSQuestionSchema = z.object({
+  ...questionBaseFields,
+  type: z.literal("nps"),
 });
 
 const QuestionSchema = z.discriminatedUnion("type", [
   LikertQuestionSchema,
   RatingQuestionSchema,
   OpenEndedQuestionSchema,
+  ForcedRankingQuestionSchema,
+  AllocationQuestionSchema,
+  SemanticDifferentialQuestionSchema,
+  MultipleChoiceQuestionSchema,
+  MatrixQuestionSchema,
+  SentenceCompletionQuestionSchema,
+  WordAssociationQuestionSchema,
+  ScenarioQuestionSchema,
+  YesNoWhyQuestionSchema,
+  NPSQuestionSchema,
 ]);
 
 export const InstrumentSchema = z.object({
   title: z.string(),
   description: z.string(),
   rationale: z.string(),
-  questions: z.array(QuestionSchema).min(3).max(15),
+  questions: z.array(QuestionSchema).min(3).max(20),
+  // nullish for the same reason as OrchestratorInterpretationSchema.variants —
+  // a non-variant survey instrument legitimately has no variants block.
   variants: z
     .object({
       label: z.string(),
@@ -126,7 +213,7 @@ export const InstrumentSchema = z.object({
         .max(8),
       randomizeOrder: z.boolean().optional(),
     })
-    .optional(),
+    .nullish(),
 });
 
 // ── Step 4 ────────────────────────────────────────────────────────────────────

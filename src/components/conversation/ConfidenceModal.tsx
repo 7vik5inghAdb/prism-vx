@@ -17,22 +17,22 @@ export function ConfidenceModal({
 
   const color =
     confidence.score >= 70
-      ? "text-sky"
+      ? "text-green-500"
       : confidence.score >= 50
-      ? "text-yellow"
-      : "text-scarlet";
+      ? "text-amber-500"
+      : "text-red-500";
   const ringColor =
     confidence.score >= 70
-      ? "ring-green-200"
+      ? "ring-green-500/20"
       : confidence.score >= 50
-      ? "ring-amber-200"
-      : "ring-red-200";
+      ? "ring-amber-500/20"
+      : "ring-red-500/20";
   const dotColor =
     confidence.score >= 70
-      ? "bg-sky/100"
+      ? "bg-green-500"
       : confidence.score >= 50
-      ? "bg-yellow/100"
-      : "bg-scarlet";
+      ? "bg-amber-500"
+      : "bg-red-500";
 
   return (
     <div
@@ -50,10 +50,10 @@ export function ConfidenceModal({
                 "w-12 h-12 rounded-full bg-bg-deep border-2 flex items-center justify-center ring-4",
                 ringColor,
                 confidence.score >= 70
-                  ? "border-sky"
+                  ? "border-green-500"
                   : confidence.score >= 50
-                  ? "border-yellow"
-                  : "border-scarlet"
+                  ? "border-amber-500"
+                  : "border-red-500"
               )}
             >
               <Shield className={cn("w-6 h-6", color)} />
@@ -150,17 +150,17 @@ export function ConfidenceModal({
           {confidence.biasFlags.length > 0 && (
             <div>
               <h3 className="text-xs font-bold text-ink-mid uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                <AlertTriangle className="w-3.5 h-3.5 text-yellow" />
+                <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
                 Detected Bias Risks
               </h3>
               <div className="space-y-1.5">
                 {confidence.biasFlags.map((f, i) => (
                   <div
                     key={i}
-                    className="flex items-start gap-2 bg-yellow/10 border border-yellow/30 rounded-lg p-2.5"
+                    className="flex items-start gap-2 bg-amber-500/10 border border-amber-500/30 rounded-lg p-2.5"
                   >
-                    <span className="text-yellow font-bold text-xs leading-none mt-0.5">⚠</span>
-                    <span className="text-xs text-yellow leading-relaxed">{f}</span>
+                    <span className="text-amber-500 font-bold text-xs leading-none mt-0.5">!</span>
+                    <span className="text-xs text-amber-500 leading-relaxed">{f}</span>
                   </div>
                 ))}
               </div>
@@ -177,19 +177,19 @@ export function ConfidenceModal({
             </h3>
             <div className="space-y-1 text-[11px] text-ink-mid">
               <div className="flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-sky/100 flex-shrink-0" />
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0" />
                 <span>
                   <span className="font-bold">80–100:</span> Strong, consistent findings, well-grounded
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-yellow/100 flex-shrink-0" />
+                <span className="w-1.5 h-1.5 rounded-full bg-green-300 flex-shrink-0" />
                 <span>
                   <span className="font-bold">60–79:</span> Solid with some gaps or minor inconsistencies
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-yellow/50 flex-shrink-0" />
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 flex-shrink-0" />
                 <span>
                   <span className="font-bold">40–59:</span> Directionally useful, requires validation
                 </span>

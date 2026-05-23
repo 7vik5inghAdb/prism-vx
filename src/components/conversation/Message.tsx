@@ -98,7 +98,7 @@ function ThinkingDots() {
         style={{ animationDelay: "150ms" }}
       />
       <span
-        className="w-1.5 h-1.5 rounded-full bg-yellow animate-pulse"
+        className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"
         style={{ animationDelay: "300ms" }}
       />
     </div>

@@ -65,11 +65,17 @@ export function Step5Report() {
           ? (panelResults.respondents as SurveyRespondent[])
           : (panelResults.respondents as InterviewRespondent[]);
 
+      // Pass the NARROW method ("survey" | "interview") that matches the
+      // respondent shape, not the wide selectedMethod. MaxDiff/KANO/Conjoint/
+      // Concept-test all produce survey-style respondents; their selectedMethod
+      // value (e.g. "maxdiff") would crash slim functions if passed through.
+      const narrowMethod = panelResults.method;
+
       const synthRes = await fetch("/api/synthesize", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          method: selectedMethod,
+          method: narrowMethod,
           respondents,
           instrument,
           personas,
@@ -87,7 +93,7 @@ export function Step5Report() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           primaryFindings: synthData.synthesis,
-          method: selectedMethod,
+          method: narrowMethod,
           panelSize: respondents.length,
           hypothesis: interpretation.restatedHypothesis,
           studyType: interpretation.studyType,
@@ -142,9 +148,15 @@ export function Step5Report() {
 
   function handleDownloadMarkdown() {
     if (!report || !context) return;
-    import("@/lib/pdf").then(({ generateMarkdown }) => {
+    import("@/lib/pdf").then(({ generateMarkdown, deriveReportFilename }) => {
       const md = generateMarkdown(report, context, interpretation);
-      downloadText(md, `prism-report-${Date.now()}.md`, "text/markdown");
+      const filename = deriveReportFilename(
+        report,
+        context,
+        interpretation,
+        "md"
+      );
+      downloadText(md, filename, "text/markdown");
     });
   }
 
@@ -344,10 +356,10 @@ function ReportSummaryCard({
   const cs = report.confidenceScore;
   const scoreColor =
     cs.score >= 70
-      ? "text-sky"
+      ? "text-green-500"
       : cs.score >= 50
-      ? "text-yellow"
-      : "text-scarlet";
+      ? "text-amber-500"
+      : "text-red-500";
 
   return (
     <div className="neu-card-sm rounded-xl p-4 space-y-3">

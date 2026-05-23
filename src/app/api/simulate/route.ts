@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { callLLM, parseJSON } from "@/lib/llm";
 import {
   buildRespondentSystemPrompt,
+  buildBatchRespondentSystemPrompt,
   buildSurveyBatchPrompt,
   buildInterviewPrompt,
 } from "@/lib/prompts";
@@ -20,6 +21,23 @@ import type {
   InterviewRespondent,
   SurveyAnswer,
 } from "@/types";
+
+interface SimulatorOptions {
+  evaluationSubject?: string;
+  studyType?: string;
+  audienceSummary?: string;
+}
+
+/** Derive an audienceSummary from context.targetAudience without bloating the
+ *  system prompt — trim to ~200 chars at a sentence boundary. */
+function summarizeAudience(targetAudience?: string): string | undefined {
+  if (!targetAudience) return undefined;
+  const trimmed = targetAudience.trim();
+  if (trimmed.length <= 200) return trimmed;
+  const slice = trimmed.slice(0, 200);
+  const lastPeriod = slice.lastIndexOf(".");
+  return (lastPeriod > 100 ? slice.slice(0, lastPeriod + 1) : slice) + "...";
+}
 
 const DEFAULT_SURVEY_TOTAL = 100;
 const DEFAULT_INTERVIEW_TOTAL = 3;
@@ -58,6 +76,11 @@ export async function POST(req: NextRequest) {
       personas: PersonaCluster[];
       instrument: ResearchInstrument;
       context?: ResearchContext; // for per-variant images
+      /** Optional study scope from the orchestrator. Threads through to the
+       *  respondent system prompt so the LLM stays on-topic and uses the right
+       *  language defaults. */
+      evaluationSubject?: string;
+      studyType?: string;
       batchIndex?: number;
       respondentIndex?: number;
       panelSize?: number;
@@ -67,11 +90,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    if (body.method === "survey") {
-      return await handleSurveyBatch(body);
-    } else {
-      return await handleInterview(body);
+    const simOptions: SimulatorOptions = {
+      evaluationSubject: body.evaluationSubject,
+      studyType: body.studyType,
+      audienceSummary: summarizeAudience(body.context?.targetAudience),
+    };
+
+    // Treat every non-interview method (survey, maxdiff, kano, conjoint,
+    // concept_test) as a survey-style flow at the simulation layer.
+    if (body.method === "interview") {
+      return await handleInterview(body, simOptions);
     }
+    return await handleSurveyBatch(body, simOptions);
   } catch (error) {
     console.error("Simulate API error:", error);
     const message = error instanceof Error ? error.message : "Unknown error";
@@ -82,13 +112,16 @@ export async function POST(req: NextRequest) {
   }
 }
 
-async function handleSurveyBatch(body: {
-  personas: PersonaCluster[];
-  instrument: ResearchInstrument;
-  context?: ResearchContext;
-  batchIndex?: number;
-  panelSize?: number;
-}) {
+async function handleSurveyBatch(
+  body: {
+    personas: PersonaCluster[];
+    instrument: ResearchInstrument;
+    context?: ResearchContext;
+    batchIndex?: number;
+    panelSize?: number;
+  },
+  simOptions: SimulatorOptions
+) {
   const { personas, instrument, batchIndex = 0, context } = body;
   const SURVEY_TOTAL = body.panelSize ?? DEFAULT_SURVEY_TOTAL;
   const variants = instrument.variants?.items;
@@ -173,13 +206,20 @@ async function handleSurveyBatch(body: {
     batch,
     imageVariantIds.length > 0 ? imageVariantIds : undefined
   );
-  const systemPrompt = `You are simulating ${batch.length} distinct survey respondents. Each has a unique profile. Stay in character for each. Respondents have authentic, varied opinions — not all positive, not all negative.${orderedImages.length > 0 ? ` Some variants are images attached to this message; react to them visually.` : ""}`;
+  const systemPrompt = buildBatchRespondentSystemPrompt(
+    batch.length,
+    orderedImages.length > 0,
+    simOptions
+  );
 
   const response = await callLLM({
     systemPrompt,
     userPrompt,
     images: orderedImages.length > 0 ? orderedImages : undefined,
-    temperature: 0.85,
+    // 0.9 — high temperature deliberately. Diversity across respondents is
+    // the whole point of the simulator; the anti-convergence rules in the
+    // system prompt only work if sampling temperature lets variance through.
+    temperature: 0.9,
     maxTokens: variants ? 12000 : 6000,
     step: `step4_survey_batch_${batchIndex}`,
     modelTier: "simulation",
@@ -228,13 +268,16 @@ async function handleSurveyBatch(body: {
   });
 }
 
-async function handleInterview(body: {
-  personas: PersonaCluster[];
-  instrument: ResearchInstrument;
-  context?: ResearchContext;
-  respondentIndex?: number;
-  panelSize?: number;
-}) {
+async function handleInterview(
+  body: {
+    personas: PersonaCluster[];
+    instrument: ResearchInstrument;
+    context?: ResearchContext;
+    respondentIndex?: number;
+    panelSize?: number;
+  },
+  simOptions: SimulatorOptions
+) {
   const { personas, instrument, respondentIndex = 0, context } = body;
   const INTERVIEW_TOTAL = body.panelSize ?? DEFAULT_INTERVIEW_TOTAL;
 
@@ -264,7 +307,12 @@ async function handleInterview(body: {
     }
   }
 
-  const systemPrompt = buildRespondentSystemPrompt(profile, cluster.name, "interview");
+  const systemPrompt = buildRespondentSystemPrompt(
+    profile,
+    cluster.name,
+    "interview",
+    simOptions
+  );
   const userPrompt = buildInterviewPrompt(
     instrument.questions,
     profile,
@@ -277,7 +325,9 @@ async function handleInterview(body: {
     systemPrompt,
     userPrompt,
     images: orderedImages.length > 0 ? orderedImages : undefined,
-    temperature: 0.8,
+    // 0.9 — same rationale as the survey path: interview respondents need
+    // distinct voices, and the persona system prompt keeps them grounded.
+    temperature: 0.9,
     maxTokens: 6000,
     step: `step4_interview_${respondentIndex}`,
     modelTier: "simulation",
