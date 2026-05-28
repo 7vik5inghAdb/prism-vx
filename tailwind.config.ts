@@ -5,7 +5,11 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Brand palette (provided by user)
+        // ── Brand palette ─────────────────────────────────────────────────
+        // Reduced to: navy bg + magenta + cyan + green shades + red shades.
+        // Yellow and harvest are GONE. Scarlet is now an alias for red to
+        // keep existing `text-scarlet/*` classes resolving — semantic intent
+        // (error/danger) is unchanged.
         sky: {
           DEFAULT: "#2CC5F7",
           50: "#0E2A3A",
@@ -16,22 +20,6 @@ const config: Config = {
           500: "#2CC5F7",
           600: "#5DD3F8",
           700: "#8FE0FB",
-        },
-        yellow: {
-          DEFAULT: "#FEFC2F",
-          50: "#3A380A",
-          100: "#5C5A12",
-          300: "#C9C424",
-          500: "#FEFC2F",
-          700: "#FFFD7B",
-        },
-        harvest: {
-          DEFAULT: "#F57A00",
-          50: "#3A1D00",
-          100: "#5C2D00",
-          300: "#B85B00",
-          500: "#F57A00",
-          700: "#F89D45",
         },
         magenta: {
           DEFAULT: "#E753FE",
@@ -46,13 +34,41 @@ const config: Config = {
           800: "#F09BFF",
           900: "#F5BEFF",
         },
+        green: {
+          DEFAULT: "#22C55E",
+          50: "#052E16",
+          100: "#0A3F1F",
+          200: "#14532D",
+          300: "#15803D",
+          400: "#16A34A",
+          500: "#22C55E",
+          600: "#4ADE80",
+          700: "#86EFAC",
+          800: "#BBF7D0",
+          900: "#DCFCE7",
+        },
+        red: {
+          DEFAULT: "#EF4444",
+          50: "#450A0A",
+          100: "#5C1313",
+          200: "#7F1D1D",
+          300: "#B91C1C",
+          400: "#DC2626",
+          500: "#EF4444",
+          600: "#F87171",
+          700: "#FCA5A5",
+          800: "#FECACA",
+          900: "#FEE2E2",
+        },
+        // Scarlet kept as an alias of red (errors) so existing consumers keep
+        // resolving without manual sweeps. Map onto the same hex values as red.
         scarlet: {
-          DEFAULT: "#F5371F",
-          50: "#3A0E08",
-          100: "#5C160C",
-          300: "#B82817",
-          500: "#F5371F",
-          700: "#F76858",
+          DEFAULT: "#EF4444",
+          50: "#450A0A",
+          100: "#5C1313",
+          300: "#B91C1C",
+          500: "#EF4444",
+          700: "#FCA5A5",
         },
 
         // Brand → maps to magenta (existing prism-* class usage stays valid)
@@ -72,21 +88,21 @@ const config: Config = {
 
         // Semantic dark-theme surfaces
         bg: {
-          base: "#020d20",
-          deep: "#010818",
-          raised: "#0A1838",
-          elevated: "#122046",
-          inset: "#050f24",
+          base: "rgb(var(--bg-base) / <alpha-value>)",
+          deep: "rgb(var(--bg-deep) / <alpha-value>)",
+          raised: "rgb(var(--bg-raised) / <alpha-value>)",
+          elevated: "rgb(var(--bg-elevated) / <alpha-value>)",
+          inset: "rgb(var(--bg-inset) / <alpha-value>)",
         },
         ink: {
-          high: "#F0F4FF",
-          mid: "#B5C0DD",
-          low: "#7986A8",
-          dim: "#4A5478",
+          high: "rgb(var(--ink-high) / <alpha-value>)",
+          mid: "rgb(var(--ink-mid) / <alpha-value>)",
+          low: "rgb(var(--ink-low) / <alpha-value>)",
+          dim: "rgb(var(--ink-dim) / <alpha-value>)",
         },
         line: {
-          DEFAULT: "rgba(255, 255, 255, 0.06)",
-          strong: "rgba(255, 255, 255, 0.10)",
+          DEFAULT: "var(--line-subtle)",
+          strong: "var(--line-strong)",
           accent: "rgba(231, 83, 254, 0.20)",
         },
       },
@@ -107,16 +123,22 @@ const config: Config = {
         // Glow accents (one per palette color)
         "glow-magenta": "0 0 22px rgba(231, 83, 254, 0.45), 0 0 8px rgba(231, 83, 254, 0.25)",
         "glow-sky": "0 0 22px rgba(44, 197, 247, 0.40), 0 0 8px rgba(44, 197, 247, 0.20)",
-        "glow-yellow": "0 0 22px rgba(254, 252, 47, 0.30), 0 0 8px rgba(254, 252, 47, 0.15)",
-        "glow-orange": "0 0 22px rgba(245, 122, 0, 0.40), 0 0 8px rgba(245, 122, 0, 0.20)",
-        "glow-scarlet": "0 0 22px rgba(245, 55, 31, 0.40), 0 0 8px rgba(245, 55, 31, 0.20)",
+        "glow-green": "0 0 22px rgba(34, 197, 94, 0.40), 0 0 8px rgba(34, 197, 94, 0.20)",
+        "glow-red": "0 0 22px rgba(239, 68, 68, 0.40), 0 0 8px rgba(239, 68, 68, 0.20)",
+        // Aliases preserved so legacy shadow utilities keep resolving — they
+        // now point to red/green glows so the visual stays in the new palette.
+        "glow-yellow": "0 0 22px rgba(34, 197, 94, 0.40), 0 0 8px rgba(34, 197, 94, 0.20)",
+        "glow-orange": "0 0 22px rgba(239, 68, 68, 0.40), 0 0 8px rgba(239, 68, 68, 0.20)",
+        "glow-scarlet": "0 0 22px rgba(239, 68, 68, 0.40), 0 0 8px rgba(239, 68, 68, 0.20)",
 
         // Soft outer glow for primary buttons
         "btn-magenta": "0 4px 12px rgba(231, 83, 254, 0.35), 0 2px 4px rgba(231, 83, 254, 0.2), inset 0 1px 0 rgba(255,255,255,0.18)",
       },
       backgroundImage: {
-        "prism-gradient": "linear-gradient(90deg, #2CC5F7, #FEFC2F, #F57A00, #E753FE, #F5371F)",
-        "prism-gradient-vert": "linear-gradient(180deg, #2CC5F7, #FEFC2F, #F57A00, #E753FE, #F5371F)",
+        // Tightened to the new 3-color palette: cyan → magenta → green.
+        // Loses the rainbow but matches the "fewer colors" directive.
+        "prism-gradient": "linear-gradient(90deg, #2CC5F7, #E753FE, #22C55E)",
+        "prism-gradient-vert": "linear-gradient(180deg, #2CC5F7, #E753FE, #22C55E)",
         "magenta-gradient": "linear-gradient(135deg, #E753FE 0%, #B240D8 100%)",
         "sky-gradient": "linear-gradient(135deg, #2CC5F7 0%, #1380B3 100%)",
         "card-gradient": "linear-gradient(180deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0) 100%)",

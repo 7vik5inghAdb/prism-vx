@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { useAppStore } from "@/lib/store";
+import { Step0Welcome } from "@/components/steps/Step0Welcome";
 import { Step1Context } from "@/components/steps/Step1Context";
 import { Step2Personas } from "@/components/steps/Step2Personas";
 import { Step3Instrument } from "@/components/steps/Step3Instrument";
@@ -122,8 +123,14 @@ function ExpandableRecapCard({
 }
 
 export function ConversationPanel() {
-  const { currentStep, stepStatuses, expandedReviewStep, setExpandedReviewStep } =
-    useAppStore();
+  const {
+    currentStep,
+    stepStatuses,
+    expandedReviewStep,
+    setExpandedReviewStep,
+    context,
+    interpretation,
+  } = useAppStore();
   const scrollRef = useRef<HTMLDivElement>(null);
   const stepRefs = useRef<Map<number, HTMLDivElement>>(new Map());
 
@@ -155,8 +162,15 @@ export function ConversationPanel() {
     }
   }
 
-  const ActiveStep =
-    currentStep === 1
+  // At the very start of a session (no context filled yet) we show the
+  // Step 0 welcome with use-case cards instead of the blank Step 1 form.
+  // Snapshot-loaded sessions skip this because they set context+report+etc.
+  const showWelcome =
+    currentStep === 1 && context === null && interpretation === null;
+
+  const ActiveStep = showWelcome
+    ? Step0Welcome
+    : currentStep === 1
       ? Step1Context
       : currentStep === 2
       ? Step2Personas

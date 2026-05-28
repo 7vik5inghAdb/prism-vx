@@ -5,29 +5,63 @@
 @tailwind utilities;
 
 :root {
-  /* Brand palette */
+  /* Brand palette (theme-independent) — magenta + cyan + green + red. */
   --sky-aqua: #2CC5F7;
-  --yellow: #FEFC2F;
-  --harvest-orange: #F57A00;
   --magenta: #E753FE;
-  --scarlet-fire: #F5371F;
+  --green-mid: #22C55E;
+  --green-dark: #15803D;
+  --red-mid: #EF4444;
+  --red-dark: #B91C1C;
+  /* Scarlet retained as an alias of red for legacy callers; same hex as --red-mid. */
+  --scarlet-fire: #EF4444;
 
-  /* Surfaces */
-  --bg-base: #020d20;
-  --bg-deep: #010818;
-  --bg-raised: #0A1838;
-  --bg-elevated: #122046;
-  --bg-inset: #050f24;
+  /* Surfaces (dark default — RGB triplets so Tailwind alpha utilities work) */
+  --bg-base: 2 13 32;
+  --bg-deep: 1 8 24;
+  --bg-raised: 10 24 56;
+  --bg-elevated: 18 32 70;
+  --bg-inset: 5 15 36;
 
   /* Text */
-  --ink-high: #F0F4FF;
-  --ink-mid: #B5C0DD;
-  --ink-low: #7986A8;
-  --ink-dim: #4A5478;
+  --ink-high: 240 244 255;
+  --ink-mid: 181 192 221;
+  --ink-low: 121 134 168;
+  --ink-dim: 74 84 120;
 
-  /* Lines */
+  /* Lines (full rgba; no utility-alpha) */
   --line-subtle: rgba(255, 255, 255, 0.06);
   --line-strong: rgba(255, 255, 255, 0.10);
+
+  /* Background radial overlays — magenta, cyan, green tints (harvest orange dropped). */
+  --bg-overlay-1: rgba(231, 83, 254, 0.10);
+  --bg-overlay-2: rgba(44, 197, 247, 0.06);
+  --bg-overlay-3: rgba(34, 197, 94, 0.04);
+}
+
+:root[data-theme="light"] {
+  /* Surfaces — slightly more contrast in the deep/raised pair so panels
+     stand apart on a near-white background. */
+  --bg-base: 246 248 252;
+  --bg-deep: 232 237 245;
+  --bg-raised: 255 255 255;
+  --bg-elevated: 240 244 251;
+  --bg-inset: 244 247 251;
+
+  /* Text — darkened across the board so secondary copy reads against a
+     light background. Prior values blended into the bg, especially ink-low. */
+  --ink-high: 9 16 38;
+  --ink-mid: 40 52 86;
+  --ink-low: 74 88 122;
+  --ink-dim: 117 130 162;
+
+  /* Lines — bumped a touch so card borders are visible on white. */
+  --line-subtle: rgba(9, 16, 38, 0.10);
+  --line-strong: rgba(9, 16, 38, 0.18);
+
+  /* Softer overlays so the tints don't blast a light bg */
+  --bg-overlay-1: rgba(231, 83, 254, 0.05);
+  --bg-overlay-2: rgba(44, 197, 247, 0.04);
+  --bg-overlay-3: rgba(34, 197, 94, 0.03);
 }
 
 * {
@@ -38,8 +72,8 @@ html, body {
   margin: 0;
   padding: 0;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  background: var(--bg-base);
-  color: var(--ink-high);
+  background: rgb(var(--bg-base));
+  color: rgb(var(--ink-high));
   height: 100%;
   overflow: hidden;
   font-feature-settings: "ss01", "cv01";
@@ -47,9 +81,9 @@ html, body {
 
 body {
   background-image:
-    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(231, 83, 254, 0.10), transparent),
-    radial-gradient(ellipse 60% 40% at 100% 100%, rgba(44, 197, 247, 0.06), transparent),
-    radial-gradient(ellipse 50% 30% at 0% 100%, rgba(245, 122, 0, 0.04), transparent);
+    radial-gradient(ellipse 80% 50% at 50% -10%, var(--bg-overlay-1), transparent),
+    radial-gradient(ellipse 60% 40% at 100% 100%, var(--bg-overlay-2), transparent),
+    radial-gradient(ellipse 50% 30% at 0% 100%, var(--bg-overlay-3), transparent);
   background-attachment: fixed;
 }
 
@@ -66,7 +100,7 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--line-strong);
   border-radius: 10px;
   transition: background 0.2s;
 }
@@ -76,13 +110,13 @@ body {
 
 /* ── Form elements default ───────────────────────────────────────────────── */
 input, textarea, select {
-  background: var(--bg-inset);
-  color: var(--ink-high);
+  background: rgb(var(--bg-inset));
+  color: rgb(var(--ink-high));
   border-color: var(--line-subtle);
 }
 
 input::placeholder, textarea::placeholder {
-  color: var(--ink-dim);
+  color: rgb(var(--ink-dim));
 }
 
 input:focus, textarea:focus, select:focus {
@@ -91,6 +125,15 @@ input:focus, textarea:focus, select:focus {
   box-shadow:
     inset 2px 2px 4px rgba(0,0,0,0.4),
     inset -1px -1px 2px rgba(255,255,255,0.025),
+    0 0 0 3px rgba(231, 83, 254, 0.18) !important;
+}
+
+:root[data-theme="light"] input:focus,
+:root[data-theme="light"] textarea:focus,
+:root[data-theme="light"] select:focus {
+  box-shadow:
+    inset 1px 1px 2px rgba(11, 19, 48, 0.06),
+    inset -1px -1px 2px rgba(255, 255, 255, 0.85),
     0 0 0 3px rgba(231, 83, 254, 0.18) !important;
 }
 
@@ -107,10 +150,10 @@ input[type="number"]::-webkit-inner-spin-button {
   margin: 0;
 }
 
-/* ── Neumorphic utility classes ─────────────────────────────────────────── */
+/* ── Neumorphic utility classes (dark default) ──────────────────────────── */
 .neu-card {
   background: linear-gradient(180deg, rgba(255,255,255,0.025), rgba(255,255,255,0)),
-              var(--bg-raised);
+              rgb(var(--bg-raised));
   box-shadow:
     5px 5px 12px rgba(0, 0, 0, 0.6),
     -3px -3px 8px rgba(255, 255, 255, 0.03),
@@ -120,7 +163,7 @@ input[type="number"]::-webkit-inner-spin-button {
 
 .neu-card-sm {
   background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0)),
-              var(--bg-raised);
+              rgb(var(--bg-raised));
   box-shadow:
     3px 3px 6px rgba(0, 0, 0, 0.5),
     -2px -2px 4px rgba(255, 255, 255, 0.025),
@@ -129,7 +172,7 @@ input[type="number"]::-webkit-inner-spin-button {
 }
 
 .neu-inset {
-  background: var(--bg-inset);
+  background: rgb(var(--bg-inset));
   box-shadow:
     inset 3px 3px 6px rgba(0, 0, 0, 0.55),
     inset -2px -2px 4px rgba(255, 255, 255, 0.03);
@@ -138,7 +181,7 @@ input[type="number"]::-webkit-inner-spin-button {
 
 .neu-button {
   background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0)),
-              var(--bg-raised);
+              rgb(var(--bg-raised));
   box-shadow:
     3px 3px 7px rgba(0, 0, 0, 0.55),
     -2px -2px 5px rgba(255, 255, 255, 0.03),
@@ -149,7 +192,7 @@ input[type="number"]::-webkit-inner-spin-button {
 
 .neu-button:hover {
   background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0)),
-              var(--bg-elevated);
+              rgb(var(--bg-elevated));
   box-shadow:
     4px 4px 9px rgba(0, 0, 0, 0.6),
     -3px -3px 7px rgba(255, 255, 255, 0.04),
@@ -159,7 +202,7 @@ input[type="number"]::-webkit-inner-spin-button {
 
 .neu-button:active,
 .neu-button:disabled {
-  background: var(--bg-inset);
+  background: rgb(var(--bg-inset));
   box-shadow:
     inset 3px 3px 6px rgba(0, 0, 0, 0.55),
     inset -2px -2px 4px rgba(255, 255, 255, 0.025);
@@ -204,7 +247,7 @@ input[type="number"]::-webkit-inner-spin-button {
 }
 
 .neu-pill {
-  background: var(--bg-elevated);
+  background: rgb(var(--bg-elevated));
   box-shadow:
     2px 2px 4px rgba(0, 0, 0, 0.45),
     -1px -1px 3px rgba(255, 255, 255, 0.025),
@@ -214,8 +257,76 @@ input[type="number"]::-webkit-inner-spin-button {
 
 .neu-divider {
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+  background: linear-gradient(90deg, transparent, var(--line-strong), transparent);
 }
+
+/* ── Neumorphic utility classes (light theme overrides) ─────────────────── */
+:root[data-theme="light"] .neu-card {
+  background: linear-gradient(180deg, rgba(255,255,255,0.7), rgba(255,255,255,0)),
+              rgb(var(--bg-raised));
+  box-shadow:
+    6px 6px 14px rgba(11, 19, 48, 0.08),
+    -4px -4px 10px rgba(255, 255, 255, 0.9),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  border: 1px solid var(--line-subtle);
+}
+
+:root[data-theme="light"] .neu-card-sm {
+  background: linear-gradient(180deg, rgba(255,255,255,0.6), rgba(255,255,255,0)),
+              rgb(var(--bg-raised));
+  box-shadow:
+    3px 3px 7px rgba(11, 19, 48, 0.07),
+    -2px -2px 5px rgba(255, 255, 255, 0.85),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  border: 1px solid var(--line-subtle);
+}
+
+:root[data-theme="light"] .neu-inset {
+  background: rgb(var(--bg-inset));
+  box-shadow:
+    inset 2px 2px 5px rgba(11, 19, 48, 0.07),
+    inset -2px -2px 4px rgba(255, 255, 255, 0.85);
+  border: 1px solid var(--line-subtle);
+}
+
+:root[data-theme="light"] .neu-button {
+  background: linear-gradient(180deg, rgba(255,255,255,0.8), rgba(255,255,255,0.3)),
+              rgb(var(--bg-raised));
+  box-shadow:
+    3px 3px 6px rgba(11, 19, 48, 0.08),
+    -2px -2px 4px rgba(255, 255, 255, 0.9),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  border: 1px solid var(--line-subtle);
+}
+
+:root[data-theme="light"] .neu-button:hover {
+  background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(255,255,255,0.5)),
+              rgb(var(--bg-elevated));
+  box-shadow:
+    4px 4px 8px rgba(11, 19, 48, 0.10),
+    -3px -3px 6px rgba(255, 255, 255, 0.95),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+}
+
+:root[data-theme="light"] .neu-button:active,
+:root[data-theme="light"] .neu-button:disabled {
+  background: rgb(var(--bg-inset));
+  box-shadow:
+    inset 2px 2px 5px rgba(11, 19, 48, 0.10),
+    inset -2px -2px 4px rgba(255, 255, 255, 0.7);
+}
+
+:root[data-theme="light"] .neu-pill {
+  background: rgb(var(--bg-elevated));
+  box-shadow:
+    2px 2px 4px rgba(11, 19, 48, 0.06),
+    -1px -1px 3px rgba(255, 255, 255, 0.9),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  border: 1px solid var(--line-subtle);
+}
+
+/* (.neu-button-primary intentionally NOT theme-flipped — the magenta gradient
+   reads on both light and dark backgrounds and is part of the brand.) */
 
 /* ── Glow ring (use as wrapper) ─────────────────────────────────────────── */
 .glow-magenta-soft {
@@ -289,7 +400,7 @@ input[type="number"]::-webkit-inner-spin-button {
   top: 32px;
   width: 2px;
   height: calc(100% - 32px);
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--line-strong);
   z-index: 0;
 }
 
@@ -305,8 +416,8 @@ input[type="number"]::-webkit-inner-spin-button {
   left: 50%;
   transform: translateX(-50%);
   width: 260px;
-  background: var(--bg-deep);
-  color: var(--ink-high);
+  background: rgb(var(--bg-deep));
+  color: rgb(var(--ink-high));
   border: 1px solid var(--line-strong);
   border-radius: 10px;
   padding: 12px 14px;
@@ -314,6 +425,10 @@ input[type="number"]::-webkit-inner-spin-button {
   line-height: 1.5;
   pointer-events: none;
   box-shadow: 0 10px 30px rgba(0,0,0,0.6), 0 0 0 1px var(--line-subtle);
+}
+
+:root[data-theme="light"] .tooltip-content {
+  box-shadow: 0 10px 30px rgba(11,19,48,0.15), 0 0 0 1px var(--line-subtle);
 }
 
 /* Prose-like report content */

@@ -1,0 +1,146 @@
+{
+  "background": "This attitudinal study examined 105 USA-based subscribers to Adobe Firefly Creator Offer paid plans to determine whether the product attracts Adobe's intended Creator audience segments (ages 13-24) and to measure satisfaction with the generative-AI value delivered, comparing Firefly Standalone subscribers against Multi-Plan subscribers.",
+  "executiveSummary": "Firefly Creator Offer has attracted a different audience than intended — 0% of respondents fall within ages 13-24 and 91% are 45 or older, with the subscriber base instead composed of Business Professionals and Photo Hobbyists. While Multi-Plan Creative Professionals show strong satisfaction (around 80%) by leveraging Photoshop integration to salvage imperfect AI outputs, Firefly Standalone subscribers are markedly less satisfied (about 37%) and the panel overall sits at roughly 58% satisfied. Inconsistent generation quality and rapid credit depletion are the dominant detractors, creating value-perception risk that may impact retention — especially for the Standalone segment, who lack the tools and expertise to rescue a poor generation.",
+  "qualitativeOverview": "The Firefly Creator Offer subscriber base reveals a clear product-market divergence from the younger creators the offer targeted. Instead, the product captured four distinct segments: Standalone Business Professionals seeking a design alternative (24% of panel), Standalone Hobbyists and late adopters navigating interface challenges (17%), Multi-Plan Photo Hobbyists with existing Creative Cloud subscriptions (32%), and Multi-Plan Creative Professionals who can technically compensate for AI limitations (27%). The Standalone Business Professionals — small-business owners and service providers — express consistent frustration with credit burn rates and quality inconsistency, regenerating images five or six times to land one usable result and depleting their monthly allocation rapidly. The Standalone Hobbyists, many 65 or older, struggle with basic navigation and express confusion about the product's purpose after signing up during a promotion.\n\nThe Multi-Plan segments fare better, thanks to existing Adobe expertise. Photo Hobbyists leverage Photoshop skills to refine imperfect generations, treating Firefly as a starting point rather than a finished output. Creative Professionals show the highest satisfaction, using technical mastery to extract value despite quality variance — though a meaningful share maintain a Midjourney subscription as a backup for client-critical work. Across every segment, third-party model integration remains largely undiscovered or underused, and the credit system is a recurring pain point: subscribers cannot predict consumption and feel penalized for the iteration that AI generation inherently requires. The through-line is that quality inconsistency, not price itself, is the root frustration — and a subscriber's ability to absorb that inconsistency depends entirely on the tools and skills they bring.",
+  "participantProfile": {
+    "cohorts": [
+      {
+        "name": "Standalone Business Professional",
+        "count": 25,
+        "percent": 24,
+        "characteristics": "Firefly-only plan; solopreneurs and small-business owners doing marketing work; beginner-to-competent; lean on Canva; newer to Adobe"
+      },
+      {
+        "name": "Standalone Hobbyist & Late Adopter",
+        "count": 18,
+        "percent": 17,
+        "characteristics": "Firefly-only plan; 55+ photo hobbyists and curious casual creators; often signed up via promotion; struggle with the learning curve; least satisfied segment"
+      },
+      {
+        "name": "Multi-Plan Photo Hobbyist",
+        "count": 34,
+        "percent": 32,
+        "characteristics": "Creator Offer plus other CC plans; 45+ advanced-amateur photographers; long Adobe tenure; refine imperfect AI outputs in Photoshop"
+      },
+      {
+        "name": "Multi-Plan Creative Professional",
+        "count": 28,
+        "percent": 27,
+        "characteristics": "Creator Offer plus a full CC toolkit; employed and freelance creative pros; experts; most satisfied; salvage poor outputs and use multiple AI tools"
+      }
+    ],
+    "meanAge": 55,
+    "medianAge": 50,
+    "ageDistribution": [
+      { "band": "Under 35", "percent": 0 },
+      { "band": "35-44", "percent": 9 },
+      { "band": "45-54", "percent": 46 },
+      { "band": "55-64", "percent": 24 },
+      { "band": "65 or older", "percent": 22 }
+    ],
+    "topTools": [
+      { "tool": "Adobe Firefly", "percent": 97 },
+      { "tool": "Creative Cloud flagship apps", "percent": 59 },
+      { "tool": "ChatGPT", "percent": 55 },
+      { "tool": "Canva", "percent": 41 },
+      { "tool": "Google Gemini", "percent": 30 }
+    ]
+  },
+  "keyFindings": [
+    {
+      "theme": "Audience mismatch — the Creator Offer did not attract Creators",
+      "summary": "Zero respondents match Adobe's target Creator demographic (ages 13-24), and 91% of subscribers are aged 45 or older — primarily Business Professionals and Photo Hobbyists using Firefly for marketing or hobby photography rather than monetized social content.",
+      "evidence": [
+        "I run a landscaping business and need ads and flyers that look professional without hiring someone",
+        "I saw the holiday sale and thought Firefly might help me fix up old family photos — you know, the blurry ones or the ones that faded",
+        "I wanted to experiment with Firefly's generative fill for landscape backgrounds and see if it could accelerate my editing workflow"
+      ],
+      "sentiment": "negative",
+      "supportingData": "Age distribution: 45-54 (46%), 55-64 (24%), 65 or older (22%), 35-44 (9%), under 35 (0%). Primary use: business marketing (24%), hobby photography (49%), professional creative work (27%)."
+    },
+    {
+      "theme": "Credit system anxiety undermines user confidence",
+      "summary": "Subscribers across segments express frustration with rapid credit depletion during normal iteration, reporting five to six regenerations to land one usable image — creating a scarcity mindset that inhibits exploration and feeds cost dissatisfaction.",
+      "evidence": [
+        "Sometimes I get exactly what I want on the first try. Other times I regenerate five, six times and burn through credits like crazy",
+        "Credits burn through refinement cycles faster than I expected. For a hobbyist, I'd prefer a simpler pricing model that doesn't make me anxious about burning through credits",
+        "I hit Firefly's credit limits during heavy client sprints, which forces me back to Midjourney anyway"
+      ],
+      "sentiment": "negative",
+      "supportingData": "On the value-for-money item, subscribers split roughly evenly between agree, neutral, and disagree — and credit burn is the single most-cited frustration in open-ended responses."
+    },
+    {
+      "theme": "Quality inconsistency drives parallel tool subscriptions",
+      "summary": "Professional users keep redundant subscriptions to Midjourney because Firefly's generation quality proves too unreliable for client deadlines — defeating the consolidation value proposition the plan promises.",
+      "evidence": [
+        "Firefly's generation quality is too inconsistent for client deadlines. I can't trust it to nail a brief on the first try, so I end up using Midjourney as backup anyway",
+        "About 20% of the time, I'll get a generation that's unusable — weird anatomy, wrong vibe, doesn't match the brief. Then I'm back in Midjourney anyway",
+        "Midjourney still beats Firefly on style consistency a good share of the time"
+      ],
+      "sentiment": "mixed",
+      "supportingData": "Among Multi-Plan Creative Professionals, a meaningful share report maintaining a Midjourney subscription as a quality backup, and most use ChatGPT or Gemini alongside Firefly for ideation."
+    },
+    {
+      "theme": "Photoshop integration delivers value — for skilled users only",
+      "summary": "Creative Professionals with deep Photoshop expertise extract significant value through seamless workflow integration, while beginners and hobbyists cannot leverage this benefit — producing a sharply two-tier experience that maps directly onto the Standalone vs Multi-Plan satisfaction gap.",
+      "evidence": [
+        "The seamless handoff to Photoshop is exactly what I needed. I generate a rough image in Firefly, then mask and composite in Photoshop without leaving Creative Cloud",
+        "Generate something rough in Firefly, drop it into Photoshop, mask and color-grade it to client spec. Saves hours compared to starting from scratch",
+        "Integration with Photoshop is seamless — I can refine generations myself rather than being stuck with what the AI gave me"
+      ],
+      "sentiment": "positive",
+      "supportingData": "Satisfaction tracks expertise and plan type: Multi-Plan subscribers ~73% satisfied vs Firefly Standalone ~37%; experts report 20-40% time savings while beginners report no efficiency gain."
+    },
+    {
+      "theme": "Third-party models remain an undiscovered feature",
+      "summary": "Despite being a headline differentiator, 27% of subscribers did not know third-party models existed and 61% have never used them — only about a fifth use them regularly — representing a major missed opportunity for value delivery.",
+      "evidence": [
+        "I didn't know they were available",
+        "The results seem okay, but I'm not sure if I'm even using it right",
+        "The third-party model integration sounds good in theory but feels buried — I forget it's there"
+      ],
+      "sentiment": "negative",
+      "supportingData": "Third-party model usage: 27% did not know they existed, 34% aware but never tried, 18% tried once or twice, 21% use regularly."
+    }
+  ],
+  "crossThemes": [
+    {
+      "title": "Firefly Standalone vs Multi-Plan: an experience divide drives the satisfaction gap",
+      "analysis": "Firefly Standalone subscribers (43 of 105, roughly 37% satisfied) and Multi-Plan subscribers (62 of 105, roughly 73% satisfied) reached the same product but very different verdicts. The divide is not about the AI itself — both groups hit the same inconsistent generation quality — but about what each can do when a generation falls short. Multi-Plan users carry Photoshop and years of craft, so a flawed output is a twenty-minute fix; Standalone users, newer to Adobe and leaning on Canva, have no salvage path and are left with an unusable result and depleted credits. The same failure mode produces a shrug from one group and a churn risk from the other. Any read of the headline satisfaction number must be split by plan type, or it will mask the segment that is genuinely at risk."
+    },
+    {
+      "title": "The price of imperfection: cost complaints are a quality symptom",
+      "analysis": "Credit and cost frustration is widespread, but it is rarely a pricing objection on its own. Subscribers burn credits regenerating poor outputs — five or six attempts to get one usable image — so the cost pain scales directly with the quality pain. Improve the hit-rate of the first generation and the credit anxiety substantially recedes. Treating cost as a packaging problem — cheaper tiers, more credits, rollover — would address the symptom and miss the cause. The credit system is also where promotional confusion concentrates: subscribers who signed up on an 'unlimited' promise discover the unlimited terms apply only to the Firefly model, not the third-party ones."
+    },
+    {
+      "title": "Adobe attracted subscribers, not Creators",
+      "analysis": "The Creator Offer was positioned for Adobe's youth Creator segments — Enthusiastic Creative Hobbyists and Monetizing Social Creators. The panel contains none of them: 0% are under 35, 91% are 45 or older, and the base is overwhelmingly Business Professionals and Photo Hobbyists doing static-image work. These subscribers are real, paying, and motivated by efficiency and access to the latest AI — but they are a fundamentally different audience than the offer was designed and merchandised for. Product defaults, onboarding, and messaging calibrated to the intended Creator persona are likely mis-aimed at who actually showed up, and the gap should be closed by re-baselining to the real population rather than by trying to recruit the intended one."
+    }
+  ],
+  "strategicTakeaways": [
+    {
+      "principle": "Design for who subscribed, not who you targeted",
+      "explanation": "The intended Creator audience did not arrive; 45+ Business Professionals and Photo Hobbyists did. Re-baseline onboarding, default workflows, and merchandising around this real population rather than the youth Creator persona the offer was built for."
+    },
+    {
+      "principle": "Make generation reliability the headline metric",
+      "explanation": "Inconsistent output quality is the root cause behind dissatisfaction, credit anxiety, and parallel-tool subscriptions. A measurable first-attempt success rate, committed to publicly, addresses three problems at once."
+    },
+    {
+      "principle": "Give Standalone users a salvage path",
+      "explanation": "Multi-Plan users tolerate imperfect AI because Photoshop lets them fix it; Standalone users cannot. Build lightweight correction and editing tools into the Firefly app so a flawed generation is recoverable without an ecosystem upgrade."
+    },
+    {
+      "principle": "Discoverability is the gap for third-party models and credit packs",
+      "explanation": "Six in ten subscribers have never meaningfully used the third-party models, and many Multi-Plan users never saw credit packs. The capability exists; the surfacing does not. Prioritize in-product discovery over building more capability."
+    }
+  ],
+  "recommendations": [
+    "Re-position the Creator Offer's marketing and product defaults toward the Business Professional and Photo Enthusiast segments who actually subscribe, rather than continuing to merchandise it to the 13-24 Creator audience that is not arriving.",
+    "Redesign the credit experience to remove the iteration penalty — for example unlimited generations within a tier, or refunding credits for failed generations — since credit burn is a quality symptom, not a pricing preference.",
+    "Add a guided onboarding flow that surfaces third-party models and credit packs with hands-on tutorials; 27% of subscribers did not know third-party models existed and most never discovered credit add-ons.",
+    "Build lightweight in-app correction and editing tools so Firefly Standalone users — who lack Photoshop — have a way to salvage imperfect generations instead of churning.",
+    "Commit to a public quality-consistency roadmap with a measurable first-attempt success rate; professionals maintaining backup Midjourney subscriptions are a direct signal that Firefly is not yet trusted for production work."
+  ],
+  "methodologyNote": "Synthetic attitudinal survey of 105 USA-based Firefly Creator Offer subscribers, modeled as four behavioral personas based on plan type (Standalone vs Multi-Plan), creative expertise, and use case. An 18-question instrument mixed multiple-choice profiling questions with open-ended motivation and satisfaction questions. Given the small synthetic sample, findings are directional 'scaled-qualitative' input — useful for narrowing strategic options, not definitive quantitative conclusions — and should be validated with real subscriber research before major product decisions."
+}

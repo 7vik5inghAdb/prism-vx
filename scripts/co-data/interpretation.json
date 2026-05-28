@@ -1,0 +1,23 @@
+{
+  "summary": "An attitudinal study to profile and understand satisfaction among Adobe Firefly Creator Offer paid plan subscribers. The research aims to determine whether the new Firefly plans are attracting Adobe's intended 'Creator' audience segments (ages 13-24) and to measure subscriber satisfaction with the generative-AI value delivered.",
+  "restatedHypothesis": "Adobe's new Firefly Creator Offer paid plans (FFST/FFPO/FFPU) are successfully attracting the intended Creator audience segments (Enthusiastic Creative Hobbyists ages 13-24 and Monetizing Social Creators) and these subscribers are satisfied with the generative-AI value the plans deliver",
+  "restatedResearchQuestion": "Who is actually subscribing to the Firefly Creator Offer plans, what motivated their purchase, what creative work do they use Firefly for, how satisfied are they with the plans, and how do Firefly Standalone subscribers differ from Multi-Plan subscribers who also have other Creative Cloud plans?",
+  "restatedProduct": "Adobe Firefly Creator Offer — three paid subscription tiers (Standard, Pro, Premium) providing access to Adobe's Firefly generative-AI model, monthly generative credits, AI features in Adobe apps, and recently-added third-party AI models (Google Gemini, Nano Banana, Flux, GPT-Image)",
+  "restatedAudience": "USA-based, English-speaking subscribers to Firefly Creator Offer paid plans (n~15,804), including both Firefly Standalone subscribers (41%, Creator Offer only) and Multi-Plan subscribers (59%, Creator Offer plus other Creative Cloud plans)",
+  "restatedObjectives": [
+    "Profile subscriber demographics and creative characteristics against Adobe's Creator customer-group definitions",
+    "Understand sign-up motivations and specific creative project needs driving subscription",
+    "Measure overall satisfaction and identify top value drivers and detractors",
+    "Compare Firefly Standalone vs Multi-Plan subscribers across profile, motivation, and satisfaction dimensions",
+    "Assess reception of recently-added third-party AI models and credit-pack add-ons"
+  ],
+  "researchFocus": "Whether Firefly Creator Offer subscribers match Adobe's intended Creator audience segments (ages 13-24) and are satisfied with the generative-AI value delivered",
+  "potentialChallenges": [
+    "Expected subscriber base skews older (45+) rather than the intended youth Creator segments",
+    "Distinguishing between two behaviorally distinct sub-groups with different experience levels and tool usage",
+    "Measuring satisfaction drivers across diverse use cases from beginners to creative professionals"
+  ],
+  "studyType": "attitudinal",
+  "evaluationSubject": "Subscriber profile, motivation, and satisfaction for Adobe Firefly Creator Offer paid plans among USA-based English-speaking subscribers",
+  "successCriteria": "Evidence that a meaningful portion of subscribers fit Adobe's Creator segment definitions (ages 13-24), high satisfaction scores with the generative-AI value delivered, and clear identification of value drivers that validate the product positioning"
+}

@@ -1,0 +1,108 @@
+{
+  "title": "Adobe Express India — Tagline Positioning Test",
+  "description": "A variant-comparison survey testing five candidate marketing taglines for Adobe Express in India. Each respondent rates resonance on a 1-5 scale and explains their gut reaction in their own words for each tagline (per-variant), then makes a single forced choice for the tagline that most makes them want to try the app — with reasoning (cross-variant). Three lightweight profiling questions establish cohort, tool stack and content type so the synthesis can break results by audience segment.",
+  "rationale": "Mirrors the ADRS January 2026 study methodology: per-variant 1-5 resonance + verbatim sentiment, followed by a single cross-variant forced-choice with open-ended reasoning. The three general profiling questions allow the synthesis to attribute findings to the four cohorts (Massy Consumer / Small Business / Student / Creator). Five taglines × two per-variant questions = 10 per-variant interactions, plus 2 cross-variant questions and 3 general profiling questions = 15 interactions per respondent — closely matching the original ~13-question instrument while staying inside PRISM's 20-question schema cap.",
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple_choice",
+      "scope": "general",
+      "text": "Which of the following best describes how you use creative design tools?",
+      "options": [
+        "Massy Consumer / Personal — I make designs for myself, my family or my social posts (salaried employee, homemaker, non-employed)",
+        "Small Business / Solopreneur — I freelance, run a small business or do gig work where design is part of how I earn",
+        "Student — I am a full-time student; some occasional side freelance work is possible",
+        "Creator / Influencer — I create content (photography, video, writing, graphics) as a primary identity or source of income"
+      ],
+      "multiSelect": false
+    },
+    {
+      "id": "q2",
+      "type": "multiple_choice",
+      "scope": "general",
+      "text": "Which design and content tools do you use regularly? Select all that apply.",
+      "options": [
+        "Canva",
+        "Adobe Photoshop",
+        "CapCut",
+        "Adobe Express",
+        "Adobe Lightroom",
+        "Adobe Illustrator",
+        "Adobe Premiere / Premiere Pro",
+        "Figma",
+        "PicsArt",
+        "InShot",
+        "VN",
+        "None of the above"
+      ],
+      "multiSelect": true
+    },
+    {
+      "id": "q3",
+      "type": "multiple_choice",
+      "scope": "general",
+      "text": "What types of content do you create most often? Select all that apply.",
+      "options": [
+        "Videos or Reels",
+        "Social media posts",
+        "Edited images / photos",
+        "Posters / flyers",
+        "Stories (Instagram or WhatsApp)",
+        "Logos / brand assets",
+        "Thumbnails",
+        "College / work presentations",
+        "None of the above"
+      ],
+      "multiSelect": true
+    },
+    {
+      "id": "q4",
+      "type": "rating",
+      "scope": "per_variant",
+      "text": "On a scale of 1 to 5, how much does this tagline resonate with your personal creative needs?",
+      "min": 1,
+      "max": 5,
+      "minLabel": "Does not resonate at all",
+      "maxLabel": "Resonates very strongly"
+    },
+    {
+      "id": "q5",
+      "type": "open_ended",
+      "scope": "per_variant",
+      "text": "What is your honest first reaction to this tagline? What does it make you think or feel, and why?",
+      "placeholder": "Share what comes to mind in your own words — what it promises, what it overpromises, who it sounds like it is for, anything it reminds you of, what would make you ignore it or want to try the app."
+    },
+    {
+      "id": "q6",
+      "type": "multiple_choice",
+      "scope": "cross_variant",
+      "text": "Of the five taglines you saw, which ONE makes you most interested in trying the app?",
+      "options": [
+        "Magic of design. In your hands.",
+        "Ek click mein design (Design with a single click)",
+        "Ab India karega design (Now India will design)",
+        "Now anyone can design",
+        "Empowering Indians to design"
+      ],
+      "multiSelect": false
+    },
+    {
+      "id": "q7",
+      "type": "open_ended",
+      "scope": "cross_variant",
+      "text": "Why did you pick that tagline over the other four? What does it promise that the others did not?",
+      "placeholder": "Compare your pick to the others. What stood out? What were the others missing or doing wrong?"
+    }
+  ],
+  "variants": {
+    "label": "Tagline",
+    "items": [
+      { "id": "v1", "text": "Magic of design. In your hands." },
+      { "id": "v2", "text": "Ek click mein design (Design with a single click)" },
+      { "id": "v3", "text": "Ab India karega design (Now India will design)" },
+      { "id": "v4", "text": "Now anyone can design" },
+      { "id": "v5", "text": "Empowering Indians to design" }
+    ],
+    "randomizeOrder": true
+  }
+}

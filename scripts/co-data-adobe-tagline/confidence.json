@@ -1,0 +1,22 @@
+{
+  "score": 68,
+  "reasoning": "Study shows good differentiation across variants (2.23-3.81 spread) with internally consistent qual-quant alignment and clear persona-based variation. However, synthetic panel of 64 limits confidence, and some themes show template-like repetition in quotes.",
+  "biasFlags": [
+    "Language-template convergence in Hinglish praise ('warm', 'like my WhatsApp chats' repeated)",
+    "Over-neat narrative arc (Hinglish good, nationalism bad, empowerment worst)",
+    "Suspiciously clean rating distributions (no 5s for v1, exact 56.3% neutral for v4)"
+  ],
+  "alignmentNotes": "Findings align well with known Indian market dynamics: code-switching prevalence, rejection of patronizing Western messaging, preference for practical benefits. The empowerment backlash and Hinglish warmth match documented consumer attitudes.",
+  "strengthFactors": [
+    "Strong rating differentiation (1.58 point spread) avoiding undifferentiated panel risk",
+    "Clear persona variation (Creators vs Massy Consumers respond differently)",
+    "Qualitative themes directly support quantitative rankings",
+    "Culturally grounded insights about Hinglish vs nationalist messaging"
+  ],
+  "limitationFactors": [
+    "Synthetic panel limits real-world validity",
+    "64 respondents across 4 cohorts provides thin coverage (7-29 per segment)",
+    "Some quote repetition suggests template generation",
+    "Text-only presentation may not reflect real marketing context"
+  ]
+}

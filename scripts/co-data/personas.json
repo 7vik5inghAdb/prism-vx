@@ -1,0 +1,238 @@
+[
+  {
+    "id": "cluster_1",
+    "name": "Standalone Business Professional",
+    "description": "Firefly Standalone subscribers (Creator Offer only, no other Creative Cloud plan) who are small-business owners, solopreneurs, and knowledge workers using Firefly for marketing and side-gig work. They do NOT fit Adobe's official 'Creator' definitions — they are Business Pros producing mostly static-image content. Newer to Adobe and lean on accessible tools like Canva and Adobe Express.",
+    "dimensions": [
+      {
+        "name": "Plan Type",
+        "description": "Determines ecosystem integration and feature access",
+        "values": ["Firefly Standalone only", "No other Creative Cloud plan"]
+      },
+      {
+        "name": "Customer Group Fit",
+        "description": "Fit against Adobe's official customer-group taxonomy",
+        "values": [
+          "Business Pro / Solopreneur",
+          "Knowledge worker",
+          "Does NOT fit 'Creator' definition"
+        ]
+      },
+      {
+        "name": "Creative Skill Level",
+        "description": "Self-rated creative ability; shapes tolerance for tool complexity",
+        "values": ["Beginner, still learning", "Competent but not an expert"]
+      },
+      {
+        "name": "Age Cohort",
+        "description": "Skews older, in line with past Adobe offerings",
+        "values": ["35-44", "45-54", "55-64"]
+      },
+      {
+        "name": "Adobe Tenure",
+        "description": "Most are relatively new to Adobe",
+        "values": ["Under 1 month", "1-3 months", "3-12 months"]
+      }
+    ],
+    "narrativeProfile": "Marcus, 48, runs a small landscaping business in Ohio. He signed up for Firefly Standard direct-to-paid after seeing a promo, hoping to make professional-looking ads and flyers without paying a designer. He has used Canva for years and finds Firefly powerful but confusing — too many steps, and he burns credits fast when a generation comes out wrong. He doesn't think of himself as a 'creator'; he just needs marketing that looks legitimate.",
+    "sampleSize": 24,
+    "validationPredispositions": {
+      "adoptionPosture": "Pragmatist",
+      "riskTolerance": "Low",
+      "switchingCost": "Low",
+      "counterfactual": "Uses Canva for marketing graphics and occasionally ChatGPT for image ideas; would go back to Canva if Firefly stays frustrating",
+      "acceptanceCriteria": "Outputs good enough to use in client-facing marketing on the first or second try, without needing to learn Photoshop",
+      "rejectionTriggers": "Inconsistent AI generation quality, rapid credit depletion when refining poor outputs, multi-step workflows, feeling the app is built for professionals",
+      "habitStrength": "Weak"
+    },
+    "jobsToBeDone": {
+      "functional": "When my business needs marketing visuals, I want to generate professional images and ads quickly so I can compete without hiring a designer",
+      "emotional": "Feel capable and resourceful running my business on a tight budget",
+      "social": "Look established and professional to my customers"
+    }
+  },
+  {
+    "id": "cluster_2",
+    "name": "Standalone Hobbyist & Late Adopter",
+    "description": "Firefly Standalone subscribers who are 55+ photo hobbyists and curiosity-driven casual creators, many of whom do not fit any Adobe customer group ('Unqualified'). They signed up to try the latest AI — often via a promotion — for personal projects like family photos, cards, and hobby art. They struggle most with the learning curve and are the least satisfied segment.",
+    "dimensions": [
+      {
+        "name": "Plan Type",
+        "description": "Standalone Creator Offer only",
+        "values": ["Firefly Standalone only", "Often signed up via promo / discount"]
+      },
+      {
+        "name": "Customer Group Fit",
+        "description": "Fit against Adobe's customer-group taxonomy",
+        "values": [
+          "Photo Hobbyist",
+          "Unqualified / no customer group",
+          "Does NOT fit 'Creator' definition"
+        ]
+      },
+      {
+        "name": "Age Cohort",
+        "description": "Predominantly older adults",
+        "values": ["55-64", "65-74", "75+"]
+      },
+      {
+        "name": "Primary Use",
+        "description": "What they create",
+        "values": [
+          "Family photos & memory projects",
+          "Greeting cards & gifts",
+          "Hobby art & craft references"
+        ]
+      },
+      {
+        "name": "Tech Comfort",
+        "description": "Comfort navigating new creative software",
+        "values": ["Low", "Moderate", "Selective — good with familiar tools only"]
+      }
+    ],
+    "narrativeProfile": "Carol, 67, a retired teacher, signed up for Firefly Standard after a holiday promotion, hoping to restore old family photos and make cards for her grandchildren. She finds the Firefly web app unintuitive — 'just a bunch of reading' — and isn't sure how to save images to her project folder. She uses only a small fraction of her credits and sometimes forgets she has the subscription. She wishes it were as simple as the photo tools she already knows.",
+    "sampleSize": 17,
+    "validationPredispositions": {
+      "adoptionPosture": "Laggard",
+      "riskTolerance": "Low",
+      "switchingCost": "Low",
+      "counterfactual": "Uses free tools like Google Photos, prints at a local store, and occasionally asks family for help with edits",
+      "acceptanceCriteria": "A dead-simple interface for enhancing photos with no learning curve and clear, predictable results",
+      "rejectionTriggers": "Confusing navigation, generation-focused (not enhancement-focused) workflows, credit anxiety, outputs that look artificial, lack of guidance",
+      "habitStrength": "Weak"
+    },
+    "jobsToBeDone": {
+      "functional": "When I want to preserve family memories, I want to fix and enhance photos easily so I can make meaningful gifts for my family",
+      "emotional": "Feel technically capable and connected to family history despite my age",
+      "social": "Be the family memory-keeper"
+    }
+  },
+  {
+    "id": "cluster_3",
+    "name": "Multi-Plan Photo Hobbyist",
+    "description": "Multi-Plan subscribers (Creator Offer plus other Creative Cloud plans, often the Photography plan) who are 45+ serious photo hobbyists. They have years of Adobe experience, use Lightroom and Photoshop, and added Firefly to speed up and expand their photo work. Advanced amateurs rather than employed professionals — and not Adobe 'Creators' — but skilled enough to refine imperfect AI outputs themselves.",
+    "dimensions": [
+      {
+        "name": "Plan Type",
+        "description": "Holds Creator Offer alongside other CC plans",
+        "values": [
+          "Firefly + Photography plan",
+          "Firefly + single CC app",
+          "Multi-Plan subscriber"
+        ]
+      },
+      {
+        "name": "Customer Group Fit",
+        "description": "Fit against Adobe's customer-group taxonomy",
+        "values": [
+          "Photo Hobbyist",
+          "Advanced amateur",
+          "Does NOT fit 'Creator' definition"
+        ]
+      },
+      {
+        "name": "Creative Skill Level",
+        "description": "Self-rated creative ability",
+        "values": ["Competent but not an expert", "Expert in photography"]
+      },
+      {
+        "name": "Age & Tenure",
+        "description": "Older, long-tenured Adobe users",
+        "values": [
+          "45-54, 5-10 yrs with Adobe",
+          "55-64, 10+ yrs with Adobe",
+          "65+, veteran user"
+        ]
+      },
+      {
+        "name": "Tool Portfolio",
+        "description": "Apps used alongside Firefly",
+        "values": [
+          "Lightroom + Photoshop",
+          "Firefly + occasional ChatGPT/Gemini",
+          "Creative Cloud flagship apps"
+        ]
+      }
+    ],
+    "narrativeProfile": "Diane, 52, a dedicated photo hobbyist with 9 years of Creative Cloud experience, added Firefly Pro to her Photography plan to try background extension and concept ideas for her landscape and family photography. She is comfortable in Photoshop, so when a Firefly generation isn't quite right she can fix it herself. She likes the speed and the interoperability, though she finds the quality inconsistent and the credits go faster than she'd like.",
+    "sampleSize": 32,
+    "validationPredispositions": {
+      "adoptionPosture": "Pragmatist",
+      "riskTolerance": "Medium",
+      "switchingCost": "High",
+      "counterfactual": "Uses Lightroom and Photoshop's existing tools; would simply not use Firefly for a task if it underperforms, rather than switch ecosystems",
+      "acceptanceCriteria": "Firefly meaningfully speeds up photo work and integrates with Photoshop so imperfect generations can be refined",
+      "rejectionTriggers": "Inconsistent generation quality, credits depleting during refinement, features that duplicate what Photoshop already does well",
+      "habitStrength": "Strong"
+    },
+    "jobsToBeDone": {
+      "functional": "When editing my photography, I want to accelerate retouching and expand creative options so I can spend more time shooting and less at the desk",
+      "emotional": "Feel current and capable, keeping my long-time hobby fresh",
+      "social": "Share polished work that earns admiration from photography peers"
+    }
+  },
+  {
+    "id": "cluster_4",
+    "name": "Multi-Plan Creative Professional",
+    "description": "Multi-Plan subscribers who are employed or freelance Creative Professionals — designers, marketers, content pros — with a full Creative Cloud toolkit. Experts in at least one discipline, they perform advanced edits and use Firefly alongside emerging AI tools (Sora, ChatGPT, Gemini). They are the most satisfied segment because their skills and Photoshop precision let them salvage low-quality AI outputs. A small minority of this group are the rare subscribers who genuinely fit Adobe's 'Creator' / monetizing-social-creator definition.",
+    "dimensions": [
+      {
+        "name": "Plan Type",
+        "description": "Deep Creative Cloud investment plus the Creator Offer",
+        "values": [
+          "Firefly + All Apps",
+          "Firefly + multiple CC apps",
+          "Multi-Plan, long tenure"
+        ]
+      },
+      {
+        "name": "Customer Group Fit",
+        "description": "Fit against Adobe's customer-group taxonomy",
+        "values": [
+          "Current Creative Pro (employed)",
+          "Job-seeking Creative Pro",
+          "Rare: fits 'Creator' / monetizing social creator"
+        ]
+      },
+      {
+        "name": "Creative Skill Level",
+        "description": "Self-rated creative ability",
+        "values": ["Expert in 1+ disciplines", "Professional"]
+      },
+      {
+        "name": "Editing Sophistication",
+        "description": "Complexity of edits performed",
+        "values": [
+          "Advanced color & masking",
+          "Motion graphics & video",
+          "Detailed compositing"
+        ]
+      },
+      {
+        "name": "AI Tool Portfolio",
+        "description": "Breadth of AI tools used",
+        "values": [
+          "Firefly + Sora + ChatGPT",
+          "Firefly + Midjourney + Gemini",
+          "Firefly as one of several models"
+        ]
+      }
+    ],
+    "narrativeProfile": "Anthony, 45, a freelance creative professional with 12 years of Creative Cloud experience, upgraded to Firefly Pro after Adobe MAX to get the latest models and third-party partners in one place. He uses Firefly alongside Photoshop, Premiere, Sora and ChatGPT. He gets the result he wants about 80% of the time and edits the rest in Photoshop — interoperability and precision tools are exactly why the plan works for him, even when raw generation quality disappoints.",
+    "sampleSize": 27,
+    "validationPredispositions": {
+      "adoptionPosture": "Early Adopter",
+      "riskTolerance": "High",
+      "switchingCost": "Medium",
+      "counterfactual": "Uses Midjourney and other specialized AI tools when Firefly falls short, plus Photoshop for precision correction",
+      "acceptanceCriteria": "Seamless integration with the Creative Cloud workflow and the ability to refine any generation to a professional standard",
+      "rejectionTriggers": "Generation quality inconsistent with specialized tools, credit limits disrupting paid client work, unclear value of third-party models",
+      "habitStrength": "Strong"
+    },
+    "jobsToBeDone": {
+      "functional": "When delivering client work on deadline, I want to accelerate ideation and production without compromising quality so I can take on more projects",
+      "emotional": "Feel cutting-edge and in control of my craft",
+      "social": "Be seen as an innovative professional who masters new technology"
+    }
+  }
+]

@@ -110,7 +110,7 @@ function kindBadgeColor(kind: AttachmentKind) {
     case "docx":
       return "bg-sky/15 text-sky border-sky/40";
     case "txt":
-      return "bg-yellow/15 text-yellow border-yellow/40";
+      return "bg-green-500/15 text-green-500 border-green-500/40";
   }
 }
 
@@ -424,7 +424,7 @@ function VariantRow({
   return (
     <div className="neu-card-sm rounded-md p-2.5">
       <div className="flex items-center gap-2 mb-1.5">
-        <span className="text-[10px] font-bold text-magenta w-5 flex-shrink-0">
+        <span className="text-[10px] font-bold text-magenta whitespace-nowrap flex-shrink-0">
           {typeLabel ? typeLabel : "Variant"} {index + 1}
         </span>
         <input
@@ -871,8 +871,8 @@ export function Step1Context() {
                 )}
 
                 {interpretation.successCriteria && (
-                  <div className="bg-yellow/10 border border-yellow/30 rounded-lg p-2.5">
-                    <p className="text-[10px] font-bold text-yellow uppercase tracking-widest mb-1">
+                  <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-2.5">
+                    <p className="text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-1">
                       Success Criteria
                     </p>
                     <EditableText
@@ -881,7 +881,7 @@ export function Step1Context() {
                         updateInterpretation({ successCriteria: v })
                       }
                       multiline
-                      textClassName="text-xs text-yellow/90"
+                      textClassName="text-xs text-amber-500/90"
                     />
                   </div>
                 )}
@@ -944,17 +944,17 @@ export function Step1Context() {
                   interpretation.studyType === "variant_comparison" ||
                   interpretation.studyType === "positioning_test") &&
                   interpretation.variants && (
-                    <div className="bg-yellow/10 border border-yellow/30 rounded-lg p-2.5">
-                      <p className="text-[10px] font-bold text-yellow uppercase tracking-widest mb-1">
+                    <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-2.5">
+                      <p className="text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-1">
                         Concept Test Detected · {interpretation.variants.label}
                       </p>
                       <ul className="space-y-1">
                         {interpretation.variants.items.map((v, i) => (
                           <li
                             key={i}
-                            className="text-xs text-yellow/90 flex items-start gap-1.5"
+                            className="text-xs text-amber-500/90 flex items-start gap-1.5"
                           >
-                            <span className="text-yellow font-bold">
+                            <span className="text-amber-500 font-bold">
                               {i + 1}.
                             </span>
                             &ldquo;{v}&rdquo;

@@ -1,0 +1,228 @@
+{
+  "title": "Adobe Firefly Creator Offer — Subscriber Survey",
+  "description": "A profiling and satisfaction survey of subscribers to Adobe's new Firefly Creator Offer paid plans (FFST/FFPO/FFPU). Covers who subscribed, why they signed up, what creative work they use Firefly for, and how satisfied they are — with a Firefly Standalone vs Multi-Plan comparison.",
+  "rationale": "Recreates the ADRS subscriber-survey methodology: a ~30-question online survey compressed to 18 items, mixing multiple-choice profiling questions with open-ended motivation and satisfaction questions. Reported as scaled-qualitative, directional input given the small sample. ADRS's 7-point satisfaction scale is approximated with PRISM's 5-point Likert (closest available proxy).",
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple_choice",
+      "scope": "general",
+      "text": "What is your age?",
+      "options": ["Under 18", "18-24", "25-34", "35-44", "45-54", "55-64", "65 or older"],
+      "multiSelect": false
+    },
+    {
+      "id": "q2",
+      "type": "multiple_choice",
+      "scope": "general",
+      "text": "In the past 6 months, which of the following have you done on your own personal social media accounts? Select all that apply.",
+      "options": [
+        "Posted my own original, edited content",
+        "Posted un-edited photos or videos",
+        "Re-shared content from others",
+        "Earned money or compensation from content I made",
+        "Actively tried to earn money or compensation, but did not yet",
+        "I didn't post anything"
+      ],
+      "multiSelect": true
+    },
+    {
+      "id": "q3",
+      "type": "multiple_choice",
+      "scope": "general",
+      "text": "How would you characterize your skills when it comes to creative projects?",
+      "options": [
+        "Beginner and still learning",
+        "Competent but not an expert",
+        "Expert in 1 or more creative disciplines"
+      ],
+      "multiSelect": false
+    },
+    {
+      "id": "q4",
+      "type": "multiple_choice",
+      "scope": "general",
+      "text": "Which types of edits do you typically make when you do creative projects? Select all that apply.",
+      "options": [
+        "Basic color edits (brightness, contrast)",
+        "Crop / resize",
+        "Apply text & adjust fonts",
+        "Apply presets, filters, or templates",
+        "Advanced color adjustments",
+        "Masking for selective edits",
+        "Add music & sound effects",
+        "Detailed color grading",
+        "Custom animations / motion graphics",
+        "Intricate video transitions",
+        "None of the above"
+      ],
+      "multiSelect": true
+    },
+    {
+      "id": "q5",
+      "type": "multiple_choice",
+      "scope": "general",
+      "text": "Which of these creative apps do you use? Select all that apply.",
+      "options": [
+        "Adobe Creative Cloud flagship apps (Photoshop, Illustrator, Premiere, etc.)",
+        "Canva",
+        "Adobe Express",
+        "Affinity",
+        "CapCut",
+        "Figma",
+        "Final Cut Pro",
+        "DaVinci Resolve",
+        "Procreate",
+        "None of these"
+      ],
+      "multiSelect": true
+    },
+    {
+      "id": "q6",
+      "type": "multiple_choice",
+      "scope": "general",
+      "text": "Which of these AI apps do you use? Select all that apply.",
+      "options": [
+        "Adobe Firefly",
+        "ChatGPT",
+        "Google Gemini",
+        "Generative AI features inside creative apps (e.g. Generative Fill)",
+        "Claude",
+        "Sora",
+        "Midjourney",
+        "Runway",
+        "None of these"
+      ],
+      "multiSelect": true
+    },
+    {
+      "id": "q7",
+      "type": "multiple_choice",
+      "scope": "general",
+      "text": "How would you describe your experience using Adobe creative products?",
+      "options": [
+        "New (less than 1 month)",
+        "Getting started (1-3 months)",
+        "Building (3-12 months)",
+        "Experienced (1-5 years)",
+        "Veteran (5+ years)"
+      ],
+      "multiSelect": false
+    },
+    {
+      "id": "q8",
+      "type": "multiple_choice",
+      "scope": "general",
+      "text": "In the past 30 days, how often did you work on creative projects using any creative app or software?",
+      "options": ["Daily", "Weekly", "Less than weekly", "Never"],
+      "multiSelect": false
+    },
+    {
+      "id": "q9",
+      "type": "multiple_choice",
+      "scope": "general",
+      "text": "In the past 30 days, how often did you use generative AI to make new content for your creative projects (images, video, or audio)?",
+      "options": ["Daily", "Weekly", "Less than weekly", "Never"],
+      "multiSelect": false
+    },
+    {
+      "id": "q10",
+      "type": "multiple_choice",
+      "scope": "general",
+      "text": "Why did you sign up for your Adobe Firefly Plan? Select all that apply.",
+      "options": [
+        "Adobe's latest gen AI features",
+        "Efficiency / speed",
+        "Third-party models",
+        "High-precision editing",
+        "Integrated apps",
+        "Easy to learn and use apps",
+        "Discount / promotion",
+        "Wasn't sure / just curious",
+        "Access across multiple devices",
+        "Cheaper than other Creative Cloud plans"
+      ],
+      "multiSelect": true
+    },
+    {
+      "id": "q11",
+      "type": "open_ended",
+      "scope": "general",
+      "text": "In your own words, why did you sign up for your Firefly plan, and what did you hope it would do for you?",
+      "placeholder": "What drew you to the plan..."
+    },
+    {
+      "id": "q12",
+      "type": "open_ended",
+      "scope": "general",
+      "text": "What specific creative projects did you get the Firefly plan to work on? Tell us whether they are professional/work projects or personal/hobby projects, and describe them.",
+      "placeholder": "The projects I had in mind were..."
+    },
+    {
+      "id": "q13",
+      "type": "likert",
+      "scope": "general",
+      "text": "Thinking about your overall experience with your Adobe Firefly Plan, how satisfied or dissatisfied are you?",
+      "scale": [
+        "Very dissatisfied",
+        "Somewhat dissatisfied",
+        "Neither satisfied nor dissatisfied",
+        "Somewhat satisfied",
+        "Very satisfied"
+      ]
+    },
+    {
+      "id": "q14",
+      "type": "open_ended",
+      "scope": "general",
+      "text": "What do you like most about your Firefly plan? What is working well for you?",
+      "placeholder": "What works well..."
+    },
+    {
+      "id": "q15",
+      "type": "open_ended",
+      "scope": "general",
+      "text": "What frustrates you most about your Firefly plan, or falls short of what you expected?",
+      "placeholder": "What falls short..."
+    },
+    {
+      "id": "q16",
+      "type": "likert",
+      "scope": "general",
+      "text": "My Firefly plan is worth what I pay for it.",
+      "scale": [
+        "Strongly disagree",
+        "Disagree",
+        "Neither agree nor disagree",
+        "Agree",
+        "Strongly agree"
+      ]
+    },
+    {
+      "id": "q17",
+      "type": "multiple_choice",
+      "scope": "general",
+      "text": "Have you used the third-party AI models (e.g. Google Gemini, Nano Banana, Flux, GPT-Image) available through your Firefly plan?",
+      "options": [
+        "Yes — I use them regularly",
+        "Yes — I tried them once or twice",
+        "No — I'm aware of them but haven't tried them",
+        "No — I didn't know they were available"
+      ],
+      "multiSelect": false
+    },
+    {
+      "id": "q18",
+      "type": "multiple_choice",
+      "scope": "general",
+      "text": "Who pays for your Adobe Firefly Plan?",
+      "options": [
+        "I pay with personal funds",
+        "My employer or business pays",
+        "My school pays",
+        "Don't know / unsure"
+      ],
+      "multiSelect": false
+    }
+  ]
+}

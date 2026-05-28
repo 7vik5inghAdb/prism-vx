@@ -86,7 +86,7 @@ function Step1Detail() {
       )}
       {interpretation.successCriteria && (
         <LabelBlock label="Success Criteria">
-          <span className="text-yellow/90">
+          <span className="text-amber-500/90">
             {interpretation.successCriteria}
           </span>
         </LabelBlock>
@@ -120,9 +120,9 @@ function Step1Detail() {
             {interpretation.potentialChallenges.map((c, i) => (
               <li
                 key={i}
-                className="flex items-start gap-1.5 text-yellow/90"
+                className="flex items-start gap-1.5 text-amber-500/90"
               >
-                <span className="text-yellow flex-shrink-0">⚠</span>
+                <span className="text-amber-500 flex-shrink-0">!</span>
                 <span>{c}</span>
               </li>
             ))}
@@ -170,9 +170,9 @@ function Step1Detail() {
 const CLUSTER_DOT_COLORS = [
   "bg-sky",
   "bg-magenta",
-  "bg-yellow",
-  "bg-harvest",
-  "bg-scarlet",
+  "bg-green-500",
+  "bg-red-500",
+  "bg-green-300",
 ];
 
 function Step2Detail() {
@@ -274,7 +274,7 @@ function Step3Detail() {
           </span>
         )}
         {counts.open > 0 && (
-          <span className="neu-pill px-1.5 py-0.5 rounded text-harvest">
+          <span className="neu-pill px-1.5 py-0.5 rounded text-green-500">
             {counts.open} Open-ended
           </span>
         )}
@@ -288,14 +288,14 @@ function Step3Detail() {
         </p>
       </div>
       {instrument.variants && (
-        <div className="bg-yellow/10 border border-yellow/30 rounded-lg p-2.5">
-          <p className="text-[9px] font-bold text-yellow uppercase tracking-widest mb-1">
+        <div className="bg-magenta/10 border border-magenta/30 rounded-lg p-2.5">
+          <p className="text-[9px] font-bold text-magenta uppercase tracking-widest mb-1">
             Variants ({instrument.variants.items.length}{" "}
             {instrument.variants.label}s)
           </p>
           <ul className="space-y-0.5">
             {instrument.variants.items.map((v, i) => (
-              <li key={v.id} className="text-[11px] text-yellow/90">
+              <li key={v.id} className="text-[11px] text-magenta/90">
                 <span className="font-bold">{i + 1}.</span> &ldquo;{v.text}&rdquo;
               </li>
             ))}
@@ -321,7 +321,7 @@ function Step3Detail() {
                     "text-[8px] font-bold px-1 py-0.5 rounded",
                     q.type === "likert" && "bg-sky/15 text-sky",
                     q.type === "rating" && "bg-sky/15 text-sky",
-                    q.type === "open_ended" && "bg-harvest/15 text-harvest"
+                    q.type === "open_ended" && "bg-green-500/15 text-green-500"
                   )}
                 >
                   {q.type === "likert"

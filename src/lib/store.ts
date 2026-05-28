@@ -41,6 +41,8 @@ interface AppStore extends AppState {
 
   setSurveyPanelSize: (size: number) => void;
   setInterviewPanelSize: (size: number) => void;
+  setAutoRunEnabled: (enabled: boolean) => void;
+  setPlaybackMode: (on: boolean) => void;
   appendStreamingRespondents: (
     respondents: (SurveyRespondent | InterviewRespondent)[]
   ) => void;
@@ -50,21 +52,24 @@ interface AppStore extends AppState {
   currentRunId: string | null;
   currentRunName: string | null;
   setCurrentRun: (id: string, name: string) => void;
-  loadRunSnapshot: (snapshot: {
-    id: string;
-    name: string;
-    currentStep: Step;
-    stepStatuses: Record<Step, StepStatus>;
-    context: ResearchContext | null;
-    interpretation: OrchestratorInterpretation | null;
-    personas: PersonaCluster[] | null;
-    selectedMethod: ResearchMethod | null;
-    instrument: ResearchInstrument | null;
-    panelResults: PanelResults | null;
-    report: ResearchReport | null;
-    surveyPanelSize: number;
-    interviewPanelSize: number;
-  }) => void;
+  loadRunSnapshot: (
+    snapshot: {
+      id: string;
+      name: string;
+      currentStep: Step;
+      stepStatuses: Record<Step, StepStatus>;
+      context: ResearchContext | null;
+      interpretation: OrchestratorInterpretation | null;
+      personas: PersonaCluster[] | null;
+      selectedMethod: ResearchMethod | null;
+      instrument: ResearchInstrument | null;
+      panelResults: PanelResults | null;
+      report: ResearchReport | null;
+      surveyPanelSize: number;
+      interviewPanelSize: number;
+    },
+    opts?: { playback?: boolean }
+  ) => void;
 
   // UI state
   pipelineOpen: boolean;
@@ -101,6 +106,8 @@ const initialState: AppState = {
   report: null,
   surveyPanelSize: 100,
   interviewPanelSize: 3,
+  autoRunEnabled: false,
+  playbackMode: false,
   streamingRespondents: [],
   autosavedAt: null,
 };
@@ -254,14 +261,40 @@ export const useAppStore = create<AppStore>()(
   advanceToStep: (step) => {
     const current = get().currentStep;
     if (step !== current + 1) return;
-    set((state) => ({
-      currentStep: step,
-      stepStatuses: {
-        ...state.stepStatuses,
-        [current]: "completed",
-        [step]: "active",
-      },
-    }));
+    set((state) => {
+      // Forward-only pipeline: advancing into `step` invalidates every
+      // output of `step` and any later step. Clearing them prevents a prior
+      // run's results (e.g. a stale report) from leaking into a new pass or
+      // rendering before the step that produces them has actually run.
+      //
+      // EXCEPTION — playback mode: a cached snapshot pre-loaded every step's
+      // output and the user is just clicking through to review it. There is
+      // no re-run, so clearing would wipe the cached data and force live LLM
+      // calls. Skip all invalidation in playback.
+      const invalidated: Partial<AppState> = {};
+      if (!state.playbackMode) {
+        if (step <= 2) invalidated.personas = null;
+        if (step <= 3) {
+          invalidated.instrument = null;
+          invalidated.selectedMethod = null;
+        }
+        if (step <= 4) {
+          invalidated.panelResults = null;
+          invalidated.simulationProgress = null;
+          invalidated.streamingRespondents = [];
+        }
+        if (step <= 5) invalidated.report = null;
+      }
+      return {
+        ...invalidated,
+        currentStep: step,
+        stepStatuses: {
+          ...state.stepStatuses,
+          [current]: "completed",
+          [step]: "active",
+        },
+      };
+    });
   },
 
   setStepStatus: (step, status) =>
@@ -279,9 +312,10 @@ export const useAppStore = create<AppStore>()(
   setReport: (report) => set({ report }),
 
   setSurveyPanelSize: (size) =>
-    set({ surveyPanelSize: Math.max(20, Math.min(500, size)) }),
+    set({ surveyPanelSize: Math.max(10, Math.min(500, size)) }),
   setInterviewPanelSize: (size) =>
     set({ interviewPanelSize: Math.max(1, Math.min(10, size)) }),
+  setAutoRunEnabled: (enabled) => set({ autoRunEnabled: enabled }),
   appendStreamingRespondents: (respondents) =>
     set((s) => ({
       streamingRespondents: [...s.streamingRespondents, ...respondents],
@@ -290,12 +324,18 @@ export const useAppStore = create<AppStore>()(
 
   setCurrentRun: (id, name) => set({ currentRunId: id, currentRunName: name }),
 
-  loadRunSnapshot: (snapshot) =>
+  loadRunSnapshot: (snapshot, opts) => {
+    const playback = opts?.playback ?? false;
+    const respondents = snapshot.panelResults?.respondents ?? [];
     set({
       currentRunId: snapshot.id,
       currentRunName: snapshot.name,
-      currentStep: snapshot.currentStep,
-      stepStatuses: snapshot.stepStatuses,
+      // Playback: every step's output is pre-loaded, but the user starts at
+      // Step 1 and clicks through. Normal load: jump to the snapshot's step.
+      currentStep: playback ? 1 : snapshot.currentStep,
+      stepStatuses: playback
+        ? { 1: "active", 2: "pending", 3: "pending", 4: "pending", 5: "pending" }
+        : snapshot.stepStatuses,
       context: snapshot.context,
       interpretation: snapshot.interpretation,
       personas: snapshot.personas,
@@ -305,12 +345,22 @@ export const useAppStore = create<AppStore>()(
       report: snapshot.report,
       surveyPanelSize: snapshot.surveyPanelSize,
       interviewPanelSize: snapshot.interviewPanelSize,
-      simulationProgress: null,
-      streamingRespondents: [],
+      playbackMode: playback,
+      // In playback the user advances manually — auto-run would skip ahead.
+      ...(playback ? { autoRunEnabled: false } : {}),
+      // Re-seed the streaming respondents + a completed progress marker so
+      // Step 4 renders the cached panel instead of an empty simulation view.
+      streamingRespondents: [...respondents],
+      simulationProgress: snapshot.panelResults
+        ? { current: respondents.length, total: respondents.length, phase: "complete" }
+        : null,
       isLoading: false,
       loadingMessage: "",
       error: null,
-    }),
+    });
+  },
+
+  setPlaybackMode: (on) => set({ playbackMode: on }),
 
   togglePipeline: () => set((s) => ({ pipelineOpen: !s.pipelineOpen })),
   setExpandedReviewStep: (step) => set({ expandedReviewStep: step }),
@@ -356,6 +406,8 @@ export const useAppStore = create<AppStore>()(
         report: state.report,
         surveyPanelSize: state.surveyPanelSize,
         interviewPanelSize: state.interviewPanelSize,
+        autoRunEnabled: state.autoRunEnabled,
+        playbackMode: state.playbackMode,
         currentRunId: state.currentRunId,
         currentRunName: state.currentRunName,
         pipelineOpen: state.pipelineOpen,

@@ -17,6 +17,9 @@ import {
   Eye as EyeIcon,
   Lock,
   Info,
+  ListOrdered,
+  Sparkles,
+  Scale,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ResearchMethod } from "@/types";
@@ -72,15 +75,55 @@ const METHODS: MethodDef[] = [
     },
   },
   {
+    id: "maxdiff",
+    label: "MaxDiff",
+    category: "Attitudinal",
+    icon: ListOrdered,
+    available: true,
+    selectableValue: "maxdiff",
+    tooltip: {
+      what: "Best-Worst Scaling — respondents pick the most and least preferred item from sets, forcing trade-offs.",
+      when: "Best for feature prioritization, messaging ranking, or value-prop testing where forced choice reveals true priority.",
+      produces: "A reliable preference hierarchy across items (more discriminating than simple ratings).",
+    },
+  },
+  {
+    id: "kano",
+    label: "KANO Analysis",
+    category: "Attitudinal",
+    icon: Sparkles,
+    available: true,
+    selectableValue: "kano",
+    tooltip: {
+      what: "Paired functional/dysfunctional questions per feature classify features as Must-have, Performance, Delighter, Indifferent, or Reverse.",
+      when: "Best for roadmap prioritization — distinguishing dissatisfiers (must-haves) from delighters from indifferent.",
+      produces: "A KANO classification per feature with the underlying functional/dysfunctional response data.",
+    },
+  },
+  {
+    id: "conjoint",
+    label: "Conjoint Trade-off",
+    category: "Attitudinal",
+    icon: Scale,
+    available: true,
+    selectableValue: "conjoint",
+    tooltip: {
+      what: "Simplified trade-off scenarios — 'Feature A at price X' vs 'Feature B at price Y' — forcing the synthetic panel to reveal priorities.",
+      when: "Best for pricing decisions, feature bundling, and any choice where trade-offs reveal true preference.",
+      produces: "Choice-share data per scenario, surfacing what respondents will give up for what.",
+    },
+  },
+  {
     id: "concept_testing",
     label: "Concept Testing",
     category: "Attitudinal",
     icon: Lightbulb,
-    available: false,
+    available: true,
+    selectableValue: "concept_test",
     tooltip: {
-      what: "Respondents evaluate early-stage concepts or prototypes.",
-      when: "Best for validating whether a proposed solution resonates before full development.",
-      produces: "Reactions to specific concepts with comparative preference data.",
+      what: "Respondents evaluate early-stage concepts using a tuned battery — clarity, desirability, perceived value, intent. The variant inputs serve as the concepts.",
+      when: "Best for validating whether a proposed concept (tagline, feature, design) resonates before full development.",
+      produces: "Per-concept reactions plus comparative preference data across concepts.",
     },
   },
   {
@@ -277,7 +320,7 @@ function MethodCard({
         </div>
         <div className="flex items-center gap-1.5">
           {isLocked ? (
-            <span className="inline-flex items-center gap-0.5 text-[9px] font-bold text-yellow bg-yellow/10 border border-yellow/40 px-1.5 py-0.5 rounded">
+            <span className="inline-flex items-center gap-0.5 text-[9px] font-bold text-amber-500 bg-amber-500/10 border border-amber-500/40 px-1.5 py-0.5 rounded">
               <Lock className="w-2 h-2" />
               COMING SOON
             </span>

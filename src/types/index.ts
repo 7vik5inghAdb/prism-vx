@@ -1,7 +1,12 @@
 export type Step = 1 | 2 | 3 | 4 | 5;
 export type StepStatus = "pending" | "active" | "completed" | "error";
-export type ResearchMethod = "survey" | "interview";
-export type QuestionType = "likert" | "rating" | "open_ended";
+export type ResearchMethod =
+  | "survey"
+  | "interview"
+  | "maxdiff"
+  | "kano"
+  | "conjoint"
+  | "concept_test";
 export type SentimentType = "positive" | "negative" | "mixed" | "neutral";
 
 // ── Step 1 ────────────────────────────────────────────────────────────────────
@@ -125,34 +130,133 @@ export interface PersonaCluster {
 
 // ── Step 3 ────────────────────────────────────────────────────────────────────
 
-export interface LikertQuestion {
+/**
+ * QuestionScope governs how a question relates to variants:
+ *  - "per_variant"  — asked once per variant
+ *  - "cross_variant" — asked once after all variants are shown
+ *  - "general"      — independent of variants (used in non-variant studies, or
+ *                     as a standalone PM question even when variants exist)
+ */
+export type QuestionScope = "per_variant" | "cross_variant" | "general";
+
+// Base fields every question shares (kept inline on each interface so the
+// discriminated union behaves cleanly).
+interface QuestionBase {
   id: string;
-  type: "likert";
   text: string;
-  scale: [string, string, string, string, string]; // 5 labels, SD→SA
-  perVariant?: boolean; // if true, asked once per variant
+  /** Authoritative scope field. */
+  scope?: QuestionScope;
+  /** @deprecated legacy boolean — use `scope`. Reads fall back via getQuestionScope. */
+  perVariant?: boolean;
 }
 
-export interface RatingQuestion {
-  id: string;
+export interface LikertQuestion extends QuestionBase {
+  type: "likert";
+  scale: [string, string, string, string, string]; // 5 labels, SD→SA
+}
+
+export interface RatingQuestion extends QuestionBase {
   type: "rating";
-  text: string;
   min: number;
   max: number;
   minLabel: string;
   maxLabel: string;
-  perVariant?: boolean;
 }
 
-export interface OpenEndedQuestion {
-  id: string;
+export interface OpenEndedQuestion extends QuestionBase {
   type: "open_ended";
-  text: string;
   placeholder?: string;
-  perVariant?: boolean;
 }
 
-export type Question = LikertQuestion | RatingQuestion | OpenEndedQuestion;
+/** Rank items from most-to-least preferred. Answer is a JSON-stringified ordered list of item indices or labels. */
+export interface ForcedRankingQuestion extends QuestionBase {
+  type: "forced_ranking";
+  items: string[];
+}
+
+/** Distribute a fixed pot of points across items. Answer is a JSON-stringified record { itemLabel: points }. */
+export interface AllocationQuestion extends QuestionBase {
+  type: "allocation";
+  items: string[];
+  totalPoints: number; // typically 100
+}
+
+/** Bipolar adjective pairs rated on an N-point scale. Answer is a JSON record { pairIndex: position }. */
+export interface SemanticDifferentialQuestion extends QuestionBase {
+  type: "semantic_differential";
+  pairs: { left: string; right: string }[];
+  steps: 5 | 7;
+}
+
+/** Single-select or multi-select choice. Answer is a single option (or JSON-stringified array for multi). */
+export interface MultipleChoiceQuestion extends QuestionBase {
+  type: "multiple_choice";
+  options: string[];
+  multiSelect: boolean;
+}
+
+/** Rate multiple items across multiple dimensions on the same scale. Answer is a JSON record { "item:dim": rating }. */
+export interface MatrixQuestion extends QuestionBase {
+  type: "matrix";
+  items: string[];
+  dimensions: string[];
+  scale: 5 | 7;
+}
+
+/** Free-form completion of one or more sentence stems. Answer is a JSON record { stemIndex: completion }. */
+export interface SentenceCompletionQuestion extends QuestionBase {
+  type: "sentence_completion";
+  stems: string[];
+}
+
+/** List N words in response to each stimulus. Answer is a JSON record { stimulus: [w1, w2, w3] }. */
+export interface WordAssociationQuestion extends QuestionBase {
+  type: "word_association";
+  stimuli: string[];
+  wordCount: number; // typically 3
+}
+
+/** Place respondent in a concrete situation and ask what they do. Answer is open-text. */
+export interface ScenarioQuestion extends QuestionBase {
+  type: "scenario";
+  scenarioText: string;
+  followUp: string;
+}
+
+/** Binary commit + reasoning. Answer is JSON { decision: "yes"|"no", why?: string }. */
+export interface YesNoWhyQuestion extends QuestionBase {
+  type: "yes_no_why";
+  requireWhy: boolean;
+}
+
+/** Net Promoter Score (0-10). Answer is a number in [0,10]. */
+export interface NPSQuestion extends QuestionBase {
+  type: "nps";
+}
+
+export type Question =
+  | LikertQuestion
+  | RatingQuestion
+  | OpenEndedQuestion
+  | ForcedRankingQuestion
+  | AllocationQuestion
+  | SemanticDifferentialQuestion
+  | MultipleChoiceQuestion
+  | MatrixQuestion
+  | SentenceCompletionQuestion
+  | WordAssociationQuestion
+  | ScenarioQuestion
+  | YesNoWhyQuestion
+  | NPSQuestion;
+
+export type QuestionType = Question["type"];
+
+/** Read a question's scope with legacy-field fallback. New code should call this. */
+export function getQuestionScope(q: Question): QuestionScope {
+  if (q.scope) return q.scope;
+  if (q.perVariant) return "per_variant";
+  return "cross_variant";
+}
 
 export interface InstrumentVariant {
   id: string;
@@ -177,6 +281,11 @@ export interface SurveyAnswer {
   questionId: string;
   questionText: string;
   questionType: QuestionType;
+  /**
+   * Answer payload. Simple types use string|number directly. Complex types
+   * (ranking, allocation, matrix, etc.) use a JSON-stringified payload so the
+   * single `answer` field carries the structure without expanding the schema.
+   */
   answer: string | number;
   variantId?: string; // present for per-variant answers
   variantText?: string;
@@ -324,6 +433,17 @@ export interface AppState {
   // Configurable panel sizes
   surveyPanelSize: number;
   interviewPanelSize: number;
+
+  // Auto-run: when enabled, the pipeline self-drives Steps 2→5 without
+  // manual confirmation, using minimum panel sizes (survey 10, interview 3).
+  // When disabled, the user clicks Continue at each step.
+  autoRunEnabled: boolean;
+
+  // Playback mode: a cached use-case snapshot has been loaded with every
+  // step's output already present, and the user is clicking through the
+  // pipeline to review it. In this mode `advanceToStep` does NOT clear
+  // downstream outputs (there is no re-run) and steps never call the LLM.
+  playbackMode: boolean;
 
   // Streaming respondents (populated during step 4)
   streamingRespondents: (SurveyRespondent | InterviewRespondent)[];

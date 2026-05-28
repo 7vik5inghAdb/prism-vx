@@ -60,7 +60,14 @@ export function EditableText({
     return (
       <div className={cn("relative", className)}>
         <Component
-          ref={inputRef as never}
+          // The `Component` union (textarea | input) makes a generic ref
+          // imprecise — TypeScript can't narrow which element type the ref
+          // will receive at runtime. The intersection cast is narrower than
+          // the old `as never` and accurately conveys "this ref will hold
+          // whichever element React mounts."
+          ref={
+            inputRef as React.RefObject<HTMLInputElement & HTMLTextAreaElement>
+          }
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={(e) => {

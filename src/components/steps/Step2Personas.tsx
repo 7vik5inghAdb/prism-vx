@@ -20,7 +20,7 @@ const COLORS = [
   { bg: "bg-sky/10", border: "border-sky/40", text: "text-sky", dot: "bg-sky/70" },
   { bg: "bg-magenta/10", border: "border-magenta/40", text: "text-magenta", dot: "bg-magenta/70" },
   { bg: "bg-sky/10", border: "border-sky/40", text: "text-sky", dot: "bg-sky/60" },
-  { bg: "bg-yellow/10", border: "border-yellow/40", text: "text-yellow", dot: "bg-yellow/70" },
+  { bg: "bg-green-500/10", border: "border-green-500/40", text: "text-green-500", dot: "bg-green-500/70" },
   { bg: "bg-scarlet/10", border: "border-scarlet/40", text: "text-scarlet", dot: "bg-scarlet/70" },
 ];
 
@@ -29,11 +29,15 @@ function PersonaCard({
   index,
   onUpdate,
   onDelete,
+  showL2,
+  showL3,
 }: {
   cluster: PersonaCluster;
   index: number;
   onUpdate: (updated: PersonaCluster) => void;
   onDelete: () => void;
+  showL2: boolean;
+  showL3: boolean;
 }) {
   const [expanded, setExpanded] = useState(index === 0);
   const c = COLORS[index % COLORS.length];
@@ -218,7 +222,7 @@ function PersonaCard({
           </div>
 
           {/* L2 — Validation Predispositions */}
-          {cluster.validationPredispositions && (
+          {showL2 && cluster.validationPredispositions && (
             <details className="bg-bg-deep/50 rounded-md overflow-hidden">
               <summary className="px-2 py-1.5 cursor-pointer hover:bg-bg-elevated/40 transition-colors">
                 <span
@@ -235,21 +239,61 @@ function PersonaCard({
               </summary>
               <div className="px-2 pb-2 space-y-1.5 pt-1">
                 <div className="grid grid-cols-2 gap-1 text-[10px]">
-                  <PredispositionPill
+                  <PredispositionSelect
                     label="Adoption"
                     value={cluster.validationPredispositions.adoptionPosture}
+                    options={ADOPTION_OPTIONS}
+                    onChange={(v) =>
+                      onUpdate({
+                        ...cluster,
+                        validationPredispositions: {
+                          ...cluster.validationPredispositions!,
+                          adoptionPosture: v,
+                        },
+                      })
+                    }
                   />
-                  <PredispositionPill
+                  <PredispositionSelect
                     label="Risk"
                     value={cluster.validationPredispositions.riskTolerance}
+                    options={RISK_OPTIONS}
+                    onChange={(v) =>
+                      onUpdate({
+                        ...cluster,
+                        validationPredispositions: {
+                          ...cluster.validationPredispositions!,
+                          riskTolerance: v,
+                        },
+                      })
+                    }
                   />
-                  <PredispositionPill
+                  <PredispositionSelect
                     label="Switching"
                     value={cluster.validationPredispositions.switchingCost}
+                    options={SWITCHING_OPTIONS}
+                    onChange={(v) =>
+                      onUpdate({
+                        ...cluster,
+                        validationPredispositions: {
+                          ...cluster.validationPredispositions!,
+                          switchingCost: v,
+                        },
+                      })
+                    }
                   />
-                  <PredispositionPill
+                  <PredispositionSelect
                     label="Habit"
                     value={cluster.validationPredispositions.habitStrength}
+                    options={HABIT_OPTIONS}
+                    onChange={(v) =>
+                      onUpdate({
+                        ...cluster,
+                        validationPredispositions: {
+                          ...cluster.validationPredispositions!,
+                          habitStrength: v,
+                        },
+                      })
+                    }
                   />
                 </div>
                 <div>
@@ -314,7 +358,7 @@ function PersonaCard({
           )}
 
           {/* L3 — Jobs-to-be-Done */}
-          {cluster.jobsToBeDone && (
+          {showL3 && cluster.jobsToBeDone && (
             <details className="bg-bg-deep/50 rounded-md overflow-hidden">
               <summary className="px-2 py-1.5 cursor-pointer hover:bg-bg-elevated/40 transition-colors">
                 <span
@@ -348,7 +392,7 @@ function PersonaCard({
                 </div>
                 <div className="grid grid-cols-2 gap-1.5">
                   <div>
-                    <p className="text-[8.5px] font-bold uppercase tracking-widest text-yellow mb-0.5">
+                    <p className="text-[8.5px] font-bold uppercase tracking-widest text-magenta mb-0.5">
                       Emotional
                     </p>
                     <EditableText
@@ -362,11 +406,11 @@ function PersonaCard({
                           },
                         })
                       }
-                      textClassName="text-[10px] text-yellow/90"
+                      textClassName="text-[10px] text-magenta/90"
                     />
                   </div>
                   <div>
-                    <p className="text-[8.5px] font-bold uppercase tracking-widest text-harvest mb-0.5">
+                    <p className="text-[8.5px] font-bold uppercase tracking-widest text-green-500 mb-0.5">
                       Social
                     </p>
                     <EditableText
@@ -380,7 +424,7 @@ function PersonaCard({
                           },
                         })
                       }
-                      textClassName="text-[10px] text-harvest"
+                      textClassName="text-[10px] text-green-500"
                     />
                   </div>
                 </div>
@@ -393,19 +437,90 @@ function PersonaCard({
   );
 }
 
-function PredispositionPill({
+const ADOPTION_OPTIONS = [
+  "Innovator",
+  "Early Adopter",
+  "Pragmatist",
+  "Skeptic",
+  "Laggard",
+] as const;
+const RISK_OPTIONS = ["Low", "Medium", "High"] as const;
+const SWITCHING_OPTIONS = ["Low", "Medium", "High"] as const;
+const HABIT_OPTIONS = ["Weak", "Moderate", "Strong"] as const;
+
+function PredispositionSelect<T extends string>({
   label,
   value,
+  options,
+  onChange,
 }: {
   label: string;
-  value: string;
+  value: T;
+  options: readonly T[];
+  onChange: (v: T) => void;
 }) {
   return (
     <div className="neu-pill rounded px-1.5 py-1">
       <p className="text-[8.5px] font-bold uppercase tracking-widest text-ink-low">
         {label}
       </p>
-      <p className="text-[10px] text-ink-mid font-semibold">{value}</p>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value as T)}
+        className="text-[10px] text-ink-mid font-semibold bg-transparent border-0 p-0 cursor-pointer hover:text-magenta focus:outline-none w-full"
+      >
+        {options.map((opt) => (
+          <option key={opt} value={opt}>
+            {opt}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+function LayerToggle({
+  showL2,
+  showL3,
+  setShowL2,
+  setShowL3,
+}: {
+  showL2: boolean;
+  showL3: boolean;
+  setShowL2: (v: boolean) => void;
+  setShowL3: (v: boolean) => void;
+}) {
+  return (
+    <div className="flex items-center gap-1.5 mb-2 text-[10px]">
+      <span className="text-ink-low uppercase tracking-widest font-bold mr-1">
+        Layers:
+      </span>
+      <span
+        className="neu-pill px-2 py-0.5 rounded text-magenta font-bold"
+        title="L1 (core dimensions + narrative) is always shown"
+      >
+        L1
+      </span>
+      <button
+        onClick={() => setShowL2(!showL2)}
+        className={cn(
+          "neu-pill px-2 py-0.5 rounded font-bold transition-all",
+          showL2 ? "text-magenta" : "text-ink-dim opacity-50"
+        )}
+        title="Toggle L2 — Validation Predispositions"
+      >
+        L2
+      </button>
+      <button
+        onClick={() => setShowL3(!showL3)}
+        className={cn(
+          "neu-pill px-2 py-0.5 rounded font-bold transition-all",
+          showL3 ? "text-magenta" : "text-ink-dim opacity-50"
+        )}
+        title="Toggle L3 — Jobs-to-be-Done"
+      >
+        L3
+      </button>
     </div>
   );
 }
@@ -426,12 +541,25 @@ export function Step2Personas() {
 
   const hasGenerated = !!personas;
 
+  const [showL2, setShowL2] = useState(true);
+  const [showL3, setShowL3] = useState(true);
+
   useEffect(() => {
     if (!personas && !isLoading && !error) {
       generatePersonas();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Auto-run: as soon as personas land, advance to Step 3 — but only when
+  // the user has opted into auto-run. Otherwise they review and click Continue.
+  const autoRunEnabled = useAppStore((s) => s.autoRunEnabled);
+  useEffect(() => {
+    if (!autoRunEnabled) return;
+    if (personas && !isLoading) {
+      advanceToStep(3);
+    }
+  }, [personas, isLoading, advanceToStep, autoRunEnabled]);
 
   async function generatePersonas() {
     if (!context || !interpretation) return;
@@ -536,6 +664,12 @@ export function Step2Personas() {
             variant="orchestrator"
             embed={
               <div className="space-y-2">
+                <LayerToggle
+                  showL2={showL2}
+                  showL3={showL3}
+                  setShowL2={setShowL2}
+                  setShowL3={setShowL3}
+                />
                 {personas.map((p, i) => (
                   <PersonaCard
                     key={p.id}
@@ -543,6 +677,8 @@ export function Step2Personas() {
                     index={i}
                     onUpdate={(u) => updatePersona(i, u)}
                     onDelete={() => deletePersona(i)}
+                    showL2={showL2}
+                    showL3={showL3}
                   />
                 ))}
                 <button
