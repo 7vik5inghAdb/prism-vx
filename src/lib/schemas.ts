@@ -2,14 +2,18 @@ import { z } from "zod";
 
 // ── Step 1 ────────────────────────────────────────────────────────────────────
 
+// Min-length bounds on free-text fields are intentionally generous —
+// validation should be semantic (does this field make sense?), not punitive.
+// Strict bounds force repair-retries on near-valid LLM output, which costs
+// API spend and time without improving quality.
 export const OrchestratorInterpretationSchema = z.object({
-  summary: z.string().min(10),
-  restatedHypothesis: z.string().min(10),
+  summary: z.string().min(8),
+  restatedHypothesis: z.string().min(8),
   restatedResearchQuestion: z.string().optional(),
   restatedProduct: z.string().min(5),
   restatedAudience: z.string().min(5),
   restatedObjectives: z.array(z.string()).min(1).max(6),
-  researchFocus: z.string().min(10),
+  researchFocus: z.string().min(8),
   potentialChallenges: z.array(z.string()).max(4),
   studyType: z.enum([
     "concept_test",
@@ -49,7 +53,7 @@ const PersonaClusterSchema = z.object({
   name: z.string(),
   description: z.string(),
   dimensions: z.array(PersonaDimensionSchema).min(2).max(6),
-  narrativeProfile: z.string().min(20),
+  narrativeProfile: z.string().min(15),
   sampleSize: z.number().int().min(1).max(99),
   validationPredispositions: z
     .object({
@@ -244,7 +248,7 @@ export const InterviewTranscriptSchema = z.object({
 
 export const InsightFindingSchema = z.object({
   theme: z.string(),
-  summary: z.string().min(20),
+  summary: z.string().min(10),
   evidence: z.array(z.string()).min(2).max(6),
   sentiment: z.enum(["positive", "negative", "mixed", "neutral"]),
   supportingData: z.string().optional(),
@@ -271,7 +275,7 @@ const VariantPerformanceSchema = z.object({
   ),
   topPositives: z.array(SentimentRowSchema).min(2).max(4),
   topNegatives: z.array(SentimentRowSchema).min(2).max(4),
-  narrative: z.string().min(50),
+  narrative: z.string().min(30),
 });
 
 const StrategicTakeawaySchema = z.object({
@@ -281,7 +285,7 @@ const StrategicTakeawaySchema = z.object({
 
 const CrossThemeSchema = z.object({
   title: z.string(),
-  analysis: z.string().min(40),
+  analysis: z.string().min(20),
 });
 
 const ParticipantProfileSchema = z.object({
@@ -315,11 +319,18 @@ const AdrsRecommendationSchema = z.object({
   rationale: z.string(),
 });
 
-// Generic synthesis (used when no variants)
+// Generic synthesis (used when no variants). Now includes OPTIONAL ADRS-style
+// sections — participantProfile, crossThemes, strategicTakeaways — so survey
+// studies like attitudinal / behavioral / feature-assessment can render rich
+// reports without hand-augmentation. variantPerformance + adrsRecommendation
+// remain ADRS-only since they require variants.
 export const SynthesisResponseSchema = z.object({
   background: z.string().min(20),
   executiveSummary: z.string().min(30),
   qualitativeOverview: z.string().min(30),
+  participantProfile: ParticipantProfileSchema.optional(),
+  crossThemes: z.array(CrossThemeSchema).min(2).max(4).optional(),
+  strategicTakeaways: z.array(StrategicTakeawaySchema).min(2).max(4).optional(),
   keyFindings: z.array(InsightFindingSchema).min(2).max(6),
   recommendations: z.array(z.string()).min(2).max(6),
   methodologyNote: z.string().min(20),

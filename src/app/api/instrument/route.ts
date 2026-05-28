@@ -1,4 +1,6 @@
-export const maxDuration = 60;
+// 300 s — instrument generation may take longer on multi-method studies.
+// Local dev ignores this; Vercel paid plan honors it.
+export const maxDuration = 300;
 
 import { NextRequest, NextResponse } from "next/server";
 import { callLLM, zodValidator } from "@/lib/llm";
@@ -75,7 +77,9 @@ export async function POST(req: NextRequest) {
       // 0.5 — structured question design, slight room for creative phrasing
       // without drifting from the method's analytical shape.
       temperature: 0.5,
-      maxTokens: 4000,
+      // 6000 — 20 well-formed questions plus a variants block + rationale can
+      // exceed 4000 tokens; clipping causes Zod validation failures.
+      maxTokens: 6000,
       step: "step3_instrument",
       validate: zodValidator(InstrumentSchema, "research instrument"),
     });
@@ -104,7 +108,7 @@ Regenerate the instrument with this addressed. Return ONLY valid JSON matching t
         systemPrompt: INSTRUMENT_SYSTEM,
         userPrompt: repairPrompt,
         temperature: 0.5,
-        maxTokens: 4000,
+        maxTokens: 6000,
         step: "step3_instrument_repair",
         validate: zodValidator(InstrumentSchema, "research instrument repair"),
       });

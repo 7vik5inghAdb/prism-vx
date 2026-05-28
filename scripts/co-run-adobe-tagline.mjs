@@ -1,23 +1,25 @@
-// Step-by-step PRISM pipeline runner for the Firefly Creator Offer recreation.
-// Each step reads its inputs from scripts/co-data/*.json and writes its output
-// back there, so the operator can inspect/edit any intermediate file before
-// running the next step.
+// Step-by-step PRISM pipeline runner for the Adobe Express India tagline study.
+// Mirrors scripts/co-run.mjs but targets a different use case:
+//   - Data dir:  scripts/co-data-adobe-tagline/*.json
+//   - Output:    public/use-cases/adobe-tagline.json
+//   - Panel:     64 respondents in batches of 5
+//   - Method:    survey (variant comparison with 5 taglines)
 //
-//   node scripts/co-run.mjs orchestrate
-//   node scripts/co-run.mjs personas
-//   node scripts/co-run.mjs instrument
-//   node scripts/co-run.mjs simulate
-//   node scripts/co-run.mjs synthesize
-//   node scripts/co-run.mjs confidence
-//   node scripts/co-run.mjs assemble
+//   node scripts/co-run-adobe-tagline.mjs orchestrate
+//   node scripts/co-run-adobe-tagline.mjs personas
+//   node scripts/co-run-adobe-tagline.mjs instrument
+//   node scripts/co-run-adobe-tagline.mjs simulate
+//   node scripts/co-run-adobe-tagline.mjs synthesize
+//   node scripts/co-run-adobe-tagline.mjs confidence
+//   node scripts/co-run-adobe-tagline.mjs assemble
 
 import fs from "node:fs";
 import path from "node:path";
 
 const BASE = "http://localhost:3000";
-const DIR = path.resolve("scripts/co-data");
-const OUT_PATH = path.resolve("public/use-cases/firefly-creator-offer.json");
-const PANEL_SIZE = 105;
+const DIR = path.resolve("scripts/co-data-adobe-tagline");
+const OUT_PATH = path.resolve("public/use-cases/adobe-tagline.json");
+const PANEL_SIZE = 64;
 const BATCH_SIZE = 5;
 const METHOD = "survey";
 // 8 concurrent batches — Anthropic rate limits are TPM-based, not RPS, so
@@ -28,9 +30,6 @@ const read = (name) => JSON.parse(fs.readFileSync(path.join(DIR, name), "utf8"))
 const write = (name, obj) =>
   fs.writeFileSync(path.join(DIR, name), JSON.stringify(obj, null, 2));
 
-// 540s — synthesize calls on 100+ respondent panels routinely run 7-8 min
-// through Opus; the previous 290s timeout aborted mid-call and burned API
-// spend on incomplete retries.
 async function post(routePath, body, label, { retries = 3, timeoutMs = 540000 } = {}) {
   for (let attempt = 1; attempt <= retries; attempt++) {
     const ctrl = new AbortController();
@@ -56,7 +55,7 @@ async function post(routePath, body, label, { retries = 3, timeoutMs = 540000 } 
       clearTimeout(timer);
       const msg = err instanceof Error ? err.message : String(err);
       if (attempt >= retries) throw new Error(`${label} failed after ${retries}x: ${msg}`);
-      console.log(`  ! ${label} attempt ${attempt} (${msg}) — retry in ${attempt * 3}s`);
+      console.log(`  ! ${label} attempt ${attempt} (${msg}) - retry in ${attempt * 3}s`);
       await new Promise((r) => setTimeout(r, attempt * 3000));
     }
   }
@@ -88,7 +87,7 @@ if (step === "orchestrate") {
     "instrument"
   );
   write("instrument.json", instrument);
-  console.log(`"${instrument.title}" — ${instrument.questions.length} questions:`);
+  console.log(`"${instrument.title}" - ${instrument.questions.length} questions:`);
   instrument.questions.forEach((q, i) =>
     console.log(`  ${i + 1}. [${q.type}/${q.scope ?? q.perVariant ?? "general"}] ${q.text}`)
   );
@@ -121,11 +120,11 @@ if (step === "orchestrate") {
         );
         batchResults[bi] = data.respondents || [];
       } catch (err) {
-        console.log(`  ! batch ${bi + 1} failed permanently — skipped: ${err.message}`);
+        console.log(`  ! batch ${bi + 1} failed permanently - skipped: ${err.message}`);
         batchResults[bi] = [];
       }
       done++;
-      console.log(`  batch ${bi + 1}/${totalBatches} — ${(batchResults[bi] || []).length} respondents (${done}/${totalBatches})`);
+      console.log(`  batch ${bi + 1}/${totalBatches} - ${(batchResults[bi] || []).length} respondents (${done}/${totalBatches})`);
     }
   }
   await Promise.all(Array.from({ length: CONCURRENCY }, worker));
@@ -146,6 +145,12 @@ if (step === "orchestrate") {
   write("synthesis.json", synthesis);
   console.log(`synthesis written (isAdrs=${isAdrs}). keys: ${Object.keys(synthesis).join(", ")}`);
   console.log(`keyFindings: ${(synthesis.keyFindings || []).length} · recommendations: ${(synthesis.recommendations || []).length}`);
+  if (synthesis.variantPerformance) {
+    console.log(`variantPerformance:`);
+    synthesis.variantPerformance.forEach((v) =>
+      console.log(`  - ${v.variantText} : avg ${v.averageRating} · interest ${v.interestPercent}%`)
+    );
+  }
 } else if (step === "confidence") {
   const interpretation = read("interpretation.json");
   const synthesis = read("synthesis.json");
@@ -190,8 +195,8 @@ if (step === "orchestrate") {
     adrsRecommendation: synthesis.adrsRecommendation,
   };
   const state = {
-    id: "usecase-firefly-creator-offer",
-    name: "Firefly Creator Offer — Subscriber Survey",
+    id: "usecase-adobe-tagline-india",
+    name: "Adobe Express India - Tagline Positioning Test",
     currentStep: 5,
     stepStatuses: { 1: "completed", 2: "completed", 3: "completed", 4: "completed", 5: "completed" },
     context,
@@ -205,7 +210,7 @@ if (step === "orchestrate") {
     interviewPanelSize: 3,
   };
   fs.writeFileSync(OUT_PATH, JSON.stringify({ state, generatedAt: new Date().toISOString() }, null, 2));
-  console.log(`assembled snapshot → ${OUT_PATH}`);
+  console.log(`assembled snapshot - ${OUT_PATH}`);
   console.log(`  ${respondents.length} respondents · ${(report.keyFindings || []).length} findings · confidence ${confidenceScore.score}`);
 } else {
   console.error("unknown step:", step);

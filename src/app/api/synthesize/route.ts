@@ -1,4 +1,7 @@
-export const maxDuration = 60;
+// Synthesis on a 100+ respondent panel through Opus can run 7-8 minutes — well
+// past Vercel's default 60s. Local dev ignores this; production paid plan
+// honors it. Override via env if you need a longer window on a larger panel.
+export const maxDuration = 480;
 
 import { NextRequest, NextResponse } from "next/server";
 import { callLLM, zodValidator } from "@/lib/llm";
@@ -73,7 +76,7 @@ const INPUT_CHAR_BUDGET = 600_000;
  *   - answer.variantText (already in instrument.variants.items)
  * Strip these. The LLM joins the data via questionId + variantId + clusterId.
  */
-function slimSurveyRespondent(r: SurveyRespondent) {
+function slimSurveyRespondent(r: SurveyRespondent, answerCap = 600) {
   const answers = Array.isArray(r.answers) ? r.answers : [];
   return {
     respondentId: r.respondentId,
@@ -81,9 +84,18 @@ function slimSurveyRespondent(r: SurveyRespondent) {
     answers: answers.map((a: SurveyAnswer) => ({
       qid: a.questionId,
       ...(a.variantId ? { vid: a.variantId } : {}),
-      a: typeof a.answer === "string" ? truncate(a.answer, 600) : a.answer,
+      a:
+        typeof a.answer === "string" ? truncate(a.answer, answerCap) : a.answer,
     })),
   };
+}
+
+/** Panel-size-aware answer cap. Small panels keep full nuance; large panels
+ *  must truncate to stay under the 600 KB synthesize input budget. */
+function pickAnswerCap(panelSize: number): number {
+  if (panelSize <= 50) return 1500;
+  if (panelSize <= 80) return 1000;
+  return 600;
 }
 
 function slimInterviewRespondent(r: InterviewRespondent) {
@@ -122,7 +134,49 @@ function precomputeVariantStats(
   const intentQuestion = instrument.questions.find(
     (q) => q.type === "likert" && getQuestionScope(q) === "per_variant"
   );
+  // Fallback path: when there's no per-variant likert intent question, the
+  // intent-to-try signal often lives in a cross-variant single-select where
+  // the options ARE the variant texts (e.g. "Which makes you most interested
+  // in trying the app?"). Compute interestPercent from that distribution so
+  // the LLM gets authoritative numbers instead of inferring them.
+  const forcedChoiceQuestion =
+    !intentQuestion && instrument.variants
+      ? instrument.questions.find((q) => {
+          if (q.type !== "multiple_choice") return false;
+          if (getQuestionScope(q) !== "cross_variant") return false;
+          if (q.multiSelect) return false;
+          // Heuristic: options match (or contain) variant texts.
+          const variantTexts = instrument.variants!.items.map((v) => v.text);
+          const matches = q.options.filter((opt) =>
+            variantTexts.some(
+              (vt) => opt === vt || opt.includes(vt) || vt.includes(opt)
+            )
+          ).length;
+          return matches >= Math.min(2, variantTexts.length);
+        })
+      : undefined;
   const intentPositive = new Set(["Agree", "Strongly Agree"]);
+
+  // Pre-tally forced-choice picks once if a forced-choice question exists.
+  const forcedChoicePicksByVariant = new Map<string, number>();
+  let forcedChoiceTotal = 0;
+  if (forcedChoiceQuestion) {
+    for (const r of respondents) {
+      const a = r.answers.find((a) => a.questionId === forcedChoiceQuestion.id);
+      if (!a || typeof a.answer !== "string") continue;
+      forcedChoiceTotal++;
+      // Map answer back to a variant.id by best-fit text match.
+      for (const v of instrument.variants.items) {
+        if (a.answer === v.text || a.answer.includes(v.text) || v.text.includes(a.answer)) {
+          forcedChoicePicksByVariant.set(
+            v.id,
+            (forcedChoicePicksByVariant.get(v.id) ?? 0) + 1
+          );
+          break;
+        }
+      }
+    }
+  }
 
   return instrument.variants.items.map((v) => {
     const ratings: number[] = [];
@@ -152,19 +206,59 @@ function precomputeVariantStats(
             (ratings.reduce((s, x) => s + x, 0) / ratings.length).toFixed(2)
           )
         : null;
-    const dist: Record<string, number> = {};
+    // Build distribution as an ARRAY of {rating, count, percent} so the shape
+    // matches VariantPerformanceSchema.ratingDistribution exactly. Pre-fix the
+    // precomputer returned a Record<string, number> while the prompt + schema
+    // expected an array — the LLM had to translate, and often failed.
+    const distCounts: Record<string, number> = {};
     for (const r of ratings) {
       const key = String(Math.round(r));
-      dist[key] = (dist[key] ?? 0) + 1;
+      distCounts[key] = (distCounts[key] ?? 0) + 1;
+    }
+    const ratingDistribution: Array<{
+      rating: number;
+      count: number;
+      percent: number;
+    }> = [];
+    for (const rating of [1, 2, 3, 4, 5]) {
+      const count = distCounts[String(rating)] ?? 0;
+      ratingDistribution.push({
+        rating,
+        count,
+        percent:
+          ratings.length > 0
+            ? Math.round((count / ratings.length) * 1000) / 10
+            : 0,
+      });
     }
     return {
       variantId: v.id,
       variantText: v.text,
       n: ratings.length,
       avgRating: avg,
-      intentPositivePct:
-        intentTotal > 0 ? Math.round((intentYes / intentTotal) * 100) : null,
-      ratingDistribution: dist,
+      // FIELD NAME FIX: previously `intentPositivePct`. The synthesis prompt
+      // and VariantPerformanceSchema both expect `interestPercent` — the
+      // mismatch made every variant come back with interestPercent=0 in the
+      // generated report. Renaming keeps the data flowing end-to-end.
+      //
+      // Two computation paths:
+      //   1. Per-variant likert intent question present → % rating Agree/Strongly Agree.
+      //   2. No likert intent but cross-variant single-select forced-choice
+      //      whose options match variant texts → % of panel picking this
+      //      variant as their #1 choice. This is the natural intent signal
+      //      for studies that ask "which makes you most interested?".
+      //   3. Neither → null (do NOT fabricate; the LLM is told to omit when null).
+      interestPercent:
+        intentTotal > 0
+          ? Math.round((intentYes / intentTotal) * 1000) / 10
+          : forcedChoiceTotal > 0
+            ? Math.round(
+                ((forcedChoicePicksByVariant.get(v.id) ?? 0) /
+                  forcedChoiceTotal) *
+                  1000
+              ) / 10
+            : null,
+      ratingDistribution,
     };
   });
 }
@@ -209,15 +303,19 @@ export async function POST(req: NextRequest) {
     const isAdrsConceptTest =
       !!body.instrument.variants && !useInterviewShape;
 
-    // Slim every respondent up front — this is where the savings come from
+    // Slim every respondent up front — this is where the savings come from.
+    // Survey answer cap scales with panel size: small panels keep richer
+    // open-ended detail; large panels truncate to stay inside the budget.
     let slimRespondents: unknown[];
     if (useInterviewShape) {
       slimRespondents = (body.respondents as InterviewRespondent[]).map(
         slimInterviewRespondent
       );
     } else {
-      slimRespondents = (body.respondents as SurveyRespondent[]).map(
-        slimSurveyRespondent
+      const surveyRespondents = body.respondents as SurveyRespondent[];
+      const answerCap = pickAnswerCap(surveyRespondents.length);
+      slimRespondents = surveyRespondents.map((r) =>
+        slimSurveyRespondent(r, answerCap)
       );
     }
 
@@ -282,8 +380,16 @@ The full panel of ${variance.n} numeric answers shows an unusually low standard 
       }, variance: ${variance ? variance.stdDev.toFixed(2) : "n/a"}`
     );
 
-    // Leave headroom for the response. Anthropic Opus 4.1 is 200k context.
-    const maxTokens = isAdrsConceptTest ? 8000 : 5000;
+    // Output budget: a thorough ADRS report on 100 respondents with rich
+    // variantPerformance narratives + cross-themes + strategic takeaways
+    // routinely needs 10-14k tokens. The previous 8k cap silently truncated
+    // findings and recommendations. Opus 4.1 context is 200k input + 32k
+    // output — we have plenty of headroom for higher caps. Override via env
+    // if a study runs even larger.
+    const maxTokens = Number(
+      process.env.PRISM_SYNTHESIS_MAX_TOKENS ??
+        (isAdrsConceptTest ? 16000 : 10000)
+    );
 
     const SchemaToUse = isAdrsConceptTest
       ? AdrsSynthesisResponseSchema
@@ -291,9 +397,10 @@ The full panel of ${variance.n} numeric answers shows an unusually low standard 
     const response = await callLLM({
       systemPrompt: SYNTHESIS_SYSTEM,
       userPrompt,
-      // 0.4 — synthesis should be deliberate and consistent. Lower than the
-      // simulator (which needs variance) but not deterministic.
-      temperature: 0.4,
+      // 0.5 — synthesis should be mostly deterministic for structured output
+      // but a touch of warmth helps narrative sections feel less robotic.
+      // (Previously 0.4 — bumped after observing slightly stiff prose.)
+      temperature: 0.5,
       maxTokens,
       step: isAdrsConceptTest ? "step5_synthesize_adrs" : "step5_synthesize",
       validate: zodValidator(SchemaToUse, "synthesis"),
@@ -336,8 +443,11 @@ Omit the revised* fields entirely when no rewrite is needed. Return [] for any c
           systemPrompt:
             "You are a research methodologist. Audit the report for honesty. Be terse and surgical — flag substantive issues only, ignore stylistic preferences.",
           userPrompt: critiquePrompt,
+          // 0.3 — critique should be precise and consistent.
           temperature: 0.3,
-          maxTokens: 3000,
+          // 5000 — critique can produce a full revised executiveSummary +
+          // qualitativeOverview plus three concern lists; 3000 was clipping.
+          maxTokens: 5000,
           step: "step5_synthesize_critique",
           validate: zodValidator(CritiqueSchema, "synthesis critique"),
         });

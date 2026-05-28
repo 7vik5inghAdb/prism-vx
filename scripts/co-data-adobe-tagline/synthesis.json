@@ -1,0 +1,580 @@
+{
+  "background": "Adobe Express tested five candidate marketing taglines for the Indian market, presented as text-only to isolate message impact from brand lift. The study aimed to identify which tagline best balances emotional resonance with practical clarity for India's template-driven creative tool users.",
+  "executiveSummary": "No single tagline emerged as a clear winner, though 'Ek click mein design' (v2) led on quantitative metrics (3.81/5 rating, 39% selected as most interesting) while 'Magic of design. In your hands.' (v1) showed moderate cross-cohort acceptance. The hypothesis that culturally-rooted Hindi framing would outperform generic English was partially validated — Hinglish resonated with many respondents but pure nationalistic framing proved divisive, with some finding it inspiring while others rejected it strongly.",
+  "qualitativeOverview": "The panel revealed tension between aspiration and practicality across taglines. Many Massy Consumers and Small Business owners gravitated toward concrete speed promises ('Ek click mein design'), valuing efficiency. Students showed openness to both aspirational ('Magic of design') and patriotic ('Ab India karega design') framings, though responses varied. Creators demonstrated skepticism toward suggestions that design was trivial or that they needed empowerment.\n\nHinglish connected with multiple respondents, with 'Ek click mein design' described as 'warm' and 'like my WhatsApp chats' by some. However, the nationalist framing in 'Ab India karega design' divided the panel — while some found it inspiring ('makes me feel seen'), others rejected it as 'preachy' or 'like a government campaign.' The word 'empowering' triggered strong negative reactions from many respondents, with multiple stating 'I don't need empowerment; I need a tool that works,' though nearly 30% remained neutral.\n\nA pattern emerged around professional identity: many working professionals rejected taglines implying they lacked capability, while Students and some Massy Consumers were more receptive to inclusive messaging. This suggests Adobe Express faces a positioning challenge — how to welcome beginners without alienating experienced users who see the tool as augmenting their existing skills.",
+  "participantProfile": {
+    "cohorts": [
+      {
+        "name": "Massy Consumer / Personal",
+        "count": 29,
+        "percent": 45.3,
+        "characteristics": "Salaried employees, homemakers and non-employed individuals using design tools for personal life — social posts, family photos, festival cards"
+      },
+      {
+        "name": "Small Business / Solopreneur",
+        "count": 18,
+        "percent": 28.1,
+        "characteristics": "Freelancers, gig workers, small-business owners using design as part of how they earn — client deliverables, own-brand marketing"
+      },
+      {
+        "name": "Student",
+        "count": 10,
+        "percent": 15.6,
+        "characteristics": "Full-time college and senior-school students, some with freelance side gigs — assignments, club posters, fest reels"
+      },
+      {
+        "name": "Creator / Influencer",
+        "count": 7,
+        "percent": 10.9,
+        "characteristics": "Monetizing or aspiring creators treating design as identity and income — photographers, content writers, graphic designers"
+      }
+    ]
+  },
+  "variantPerformance": [
+    {
+      "variantId": "v1",
+      "variantText": "Magic of design. In your hands.",
+      "averageRating": 3.14,
+      "interestPercent": 23.4,
+      "ratingDistribution": [
+        {
+          "rating": 5,
+          "count": 0,
+          "percent": 0
+        },
+        {
+          "rating": 4,
+          "count": 20,
+          "percent": 31.3
+        },
+        {
+          "rating": 3,
+          "count": 33,
+          "percent": 51.6
+        },
+        {
+          "rating": 2,
+          "count": 11,
+          "percent": 17.2
+        },
+        {
+          "rating": 1,
+          "count": 0,
+          "percent": 0
+        }
+      ],
+      "topPositives": [
+        {
+          "category": "User agency and control",
+          "count": 18,
+          "themes": "Respondents valued 'in your hands' as recognition of their existing capability",
+          "quotes": [
+            "It feels empowering without being preachy. It's saying I already have the power, the tool just unlocks it",
+            "The 'in your hands' part is key — puts me in control, not some AI or algorithm"
+          ]
+        },
+        {
+          "category": "Aspirational without condescension",
+          "count": 14,
+          "themes": "The poetic framing appealed to those seeking creative elevation",
+          "quotes": [
+            "Magic feels aspirational without being preachy. Magic is a word I actually use when something turns out well",
+            "It feels the most creative and aspirational, which matches how I see myself as a designer"
+          ]
+        },
+        {
+          "category": "Universal appeal",
+          "count": 8,
+          "themes": "English-only messaging felt accessible across demographics",
+          "quotes": [
+            "It sounds confident without being pushy. Doesn't claim to do everything — just puts the power in my hands",
+            "It respects me — it assumes I'm already creative and just need the tool"
+          ]
+        }
+      ],
+      "topNegatives": [
+        {
+          "category": "Too vague and generic",
+          "count": 22,
+          "themes": "Many found 'magic' meaningless without concrete benefits",
+          "quotes": [
+            "'Magic' is lazy copywriting. I'm not looking for magic; I'm looking for reliability",
+            "Feels a bit poetic, maybe too flowery? 'Magic of design' is nice but I'm not sure what it actually *means*"
+          ]
+        },
+        {
+          "category": "Lacks practical promise",
+          "count": 16,
+          "themes": "Working professionals wanted speed and efficiency, not poetry",
+          "quotes": [
+            "Magic doesn't help me finish a birthday poster in 10 minutes. I need clarity, not poetry",
+            "I don't need magic — I need speed and control"
+          ]
+        },
+        {
+          "category": "Overused marketing language",
+          "count": 8,
+          "themes": "The word 'magic' felt clichéd across design tools",
+          "quotes": [
+            "'Magic' is what every design tool promises",
+            "Sounds nice but doesn't differentiate. Every app says something like this"
+          ]
+        }
+      ],
+      "narrative": "The 'Magic of design' tagline occupied a middle ground that neither offended nor excited most respondents. Its strength lay in respecting user agency through 'in your hands,' which resonated particularly with experienced creators who wanted acknowledgment of their existing skills. Students and some Massy Consumers appreciated the aspirational tone, seeing it as elevating their creative work beyond the mundane.\n\nHowever, the tagline's poetry became its weakness among pragmatic users. Small Business owners and time-pressed Massy Consumers consistently criticized its vagueness — 'magic' didn't translate to the concrete benefits they sought. The word itself triggered skepticism among professionals who viewed it as empty marketing speak that dodged real capability claims. While scoring 3.14/5 overall, the tagline's performance revealed a fundamental challenge: aspirational messaging that respects craft risks being too abstract for users seeking practical solutions."
+    },
+    {
+      "variantId": "v2",
+      "variantText": "Ek click mein design (Design with a single click)",
+      "averageRating": 3.81,
+      "interestPercent": 51.6,
+      "ratingDistribution": [
+        {
+          "rating": 5,
+          "count": 10,
+          "percent": 15.6
+        },
+        {
+          "rating": 4,
+          "count": 33,
+          "percent": 51.6
+        },
+        {
+          "rating": 3,
+          "count": 20,
+          "percent": 31.3
+        },
+        {
+          "rating": 2,
+          "count": 1,
+          "percent": 1.6
+        },
+        {
+          "rating": 1,
+          "count": 0,
+          "percent": 0
+        }
+      ],
+      "topPositives": [
+        {
+          "category": "Speed and efficiency promise",
+          "count": 28,
+          "themes": "Direct promise of quick design resonated across cohorts",
+          "quotes": [
+            "'Ek click mein design' — it's Hinglish, it's warm, and it promises speed, which is exactly what I need",
+            "When I'm making reels at midnight before posting, I need simplicity. Hinglish feels natural, relatable. No BS"
+          ]
+        },
+        {
+          "category": "Hinglish warmth and relatability",
+          "count": 24,
+          "themes": "Code-switching felt authentic and personal",
+          "quotes": [
+            "It's Hinglish, it feels like my WhatsApp chats, and it promises speed",
+            "The Hinglish version feels like it's made for me, not at me"
+          ]
+        },
+        {
+          "category": "Clear value proposition",
+          "count": 18,
+          "themes": "Concrete benefit made decision-making easy",
+          "quotes": [
+            "It's the only one that actually tells me what benefit I get — speed, simplicity",
+            "This one actually promises something I need — speed. The Hinglish feels natural to me"
+          ]
+        }
+      ],
+      "topNegatives": [
+        {
+          "category": "Oversimplification concerns",
+          "count": 12,
+          "themes": "Some felt 'one click' trivialized the design process",
+          "quotes": [
+            "'Ek click mein design' is oversimplifying. I know from using Canva that one click won't solve everything",
+            "Single click sounds unrealistic, but the message is clear"
+          ]
+        },
+        {
+          "category": "Generic speed claim",
+          "count": 8,
+          "themes": "Speed promises felt commoditized across tools",
+          "quotes": [
+            "Every tool says one-click these days. Not convinced it's faster than what I'm already doing with Canva",
+            "I've heard this a hundred times from other tools"
+          ]
+        },
+        {
+          "category": "Reductive for professionals",
+          "count": 6,
+          "themes": "Creators felt it undersold craft complexity",
+          "quotes": [
+            "My wedding edits aren't one-click jobs, and Express knows that",
+            "Like I'm lazy or in a hurry. I care about quality. A single click doesn't guarantee that"
+          ]
+        }
+      ],
+      "narrative": "Leading with a 3.81/5 rating and 39% selection as most interesting, 'Ek click mein design' achieved the strongest quantitative performance through its combination of linguistic warmth and practical promise. The Hinglish phrasing created immediate cultural connection — respondents repeatedly described it as 'speaking my language' both literally and emotionally. This wasn't forced localization but authentic code-switching that mirrors how urban Indians actually communicate.\n\nThe tagline's success stemmed from addressing the panel's dominant pain point: time pressure. Whether Massy Consumers making weekend content, Small Business owners juggling client deadlines, or Students rushing between classes, the speed promise resonated universally. Even skeptics who questioned the literal 'one click' claim appreciated the intent. However, the simplicity that attracted beginners alienated some Creators who felt it reduced design to a commodity. The tagline's 39% interest rate suggests it could drive trial, but Adobe must ensure the product experience doesn't disappoint users expecting instant results."
+    },
+    {
+      "variantId": "v3",
+      "variantText": "Ab India karega design (Now India will design)",
+      "averageRating": 2.48,
+      "interestPercent": 14.1,
+      "ratingDistribution": [
+        {
+          "rating": 5,
+          "count": 0,
+          "percent": 0
+        },
+        {
+          "rating": 4,
+          "count": 11,
+          "percent": 17.2
+        },
+        {
+          "rating": 3,
+          "count": 17,
+          "percent": 26.6
+        },
+        {
+          "rating": 2,
+          "count": 28,
+          "percent": 43.8
+        },
+        {
+          "rating": 1,
+          "count": 8,
+          "percent": 12.5
+        }
+      ],
+      "topPositives": [
+        {
+          "category": "National pride and inclusion",
+          "count": 11,
+          "themes": "Some respondents felt recognized and included",
+          "quotes": [
+            "It feels like it's talking about *us*, not just some foreign app",
+            "This one acknowledges me and my country in a way that feels genuine, not performative"
+          ]
+        },
+        {
+          "category": "Bold and energetic",
+          "count": 8,
+          "themes": "The declarative tone created excitement for some",
+          "quotes": [
+            "This has swagger. It's bold without sounding fake",
+            "There's something energizing about it, like the tool sees Indian creators as the next wave"
+          ]
+        },
+        {
+          "category": "Cultural resonance",
+          "count": 6,
+          "themes": "Hindi phrasing connected emotionally",
+          "quotes": [
+            "यह बहुत अच्छा लगता है। It feels like it's talking about *us*",
+            "The patriotic angle isn't preachy; it feels like recognition"
+          ]
+        }
+      ],
+      "topNegatives": [
+        {
+          "category": "Preachy nationalism",
+          "count": 24,
+          "themes": "Patriotic framing felt forced and disconnected from tool usage",
+          "quotes": [
+            "Feels like nationalism masquerading as marketing. I'm 23, I don't vibe with this",
+            "Like it's trying to be patriotic but it doesn't really say what the app *does*"
+          ]
+        },
+        {
+          "category": "Irrelevant to personal use",
+          "count": 18,
+          "themes": "Users creating for themselves rejected national framing",
+          "quotes": [
+            "I'm not designing for India; I'm designing for my followers",
+            "I'm not making designs to represent India or make some big statement — I'm just making a card for my mom's birthday"
+          ]
+        },
+        {
+          "category": "Government campaign vibes",
+          "count": 14,
+          "themes": "Tone reminded users of PSAs rather than products",
+          "quotes": [
+            "Sounds like a government slogan, not an app",
+            "Feels like it's made for a government campaign, not for working video editors"
+          ]
+        }
+      ],
+      "narrative": "Scoring lowest at 2.48/5, 'Ab India karega design' proved the most polarizing tagline, splitting the panel along lines of age, professional identity, and nationalist sentiment. While 11 respondents found genuine pride in the message — particularly some Massy Consumers who felt 'seen' by explicitly Indian positioning — the majority rejected it as disconnected from their actual design needs. The tagline's 43.8% rating it '2' reveals broad discomfort with conflating personal creative work with national representation.\n\nThe fundamental disconnect lay in misaligned identity: respondents saw themselves as individuals making birthday cards, business graphics, or social content — not as representatives of India's creative potential. Small Business owners particularly bristled at the nationalist framing, viewing it as irrelevant to their commercial work. The repeated comparison to 'government campaigns' and 'NGO ads' suggests the tagline triggered associations with institutional messaging rather than consumer products. While cultural pride can be powerful, this execution felt heavy-handed to a panel more concerned with practical tool benefits than symbolic nation-building."
+    },
+    {
+      "variantId": "v4",
+      "variantText": "Now anyone can design",
+      "averageRating": 2.7,
+      "interestPercent": 9.4,
+      "ratingDistribution": [
+        {
+          "rating": 5,
+          "count": 0,
+          "percent": 0
+        },
+        {
+          "rating": 4,
+          "count": 5,
+          "percent": 7.8
+        },
+        {
+          "rating": 3,
+          "count": 36,
+          "percent": 56.3
+        },
+        {
+          "rating": 2,
+          "count": 22,
+          "percent": 34.4
+        },
+        {
+          "rating": 1,
+          "count": 1,
+          "percent": 1.6
+        }
+      ],
+      "topPositives": [
+        {
+          "category": "Inclusive and welcoming",
+          "count": 12,
+          "themes": "Beginners appreciated the democratic message",
+          "quotes": [
+            "Clear and encouraging. It doesn't assume I already know how, so it feels inclusive",
+            "This is actually what I needed to hear when I started. Felt like design was gatekept"
+          ]
+        },
+        {
+          "category": "Honest simplicity",
+          "count": 8,
+          "themes": "Some valued the straightforward claim",
+          "quotes": [
+            "It's honest and humble. No false promises, no politics",
+            "Doesn't promise magic, which I respect"
+          ]
+        },
+        {
+          "category": "Universal accessibility",
+          "count": 6,
+          "themes": "The message suggested low barriers to entry",
+          "quotes": [
+            "It's saying I don't need to be an expert to start",
+            "Straightforward and doesn't assume anything about me"
+          ]
+        }
+      ],
+      "topNegatives": [
+        {
+          "category": "Generic and forgettable",
+          "count": 28,
+          "themes": "Respondents had heard this exact promise repeatedly",
+          "quotes": [
+            "Could be said about Canva, Figma, whatever",
+            "Everyone says this. Canva says it, DaVinci says it. It's the baseline claim"
+          ]
+        },
+        {
+          "category": "Doesn't differentiate",
+          "count": 22,
+          "themes": "Failed to communicate Adobe Express's unique value",
+          "quotes": [
+            "Doesn't tell me why Adobe Express is different or better",
+            "Could be any app. Doesn't feel made for India or for me specifically"
+          ]
+        },
+        {
+          "category": "Dismissive of existing skills",
+          "count": 10,
+          "themes": "Experienced users felt their expertise was devalued",
+          "quotes": [
+            "I've been designing for years. This tagline doesn't acknowledge that",
+            "When you're trying to go full-time as a creator, you want tools that signal depth, not mass-market simplicity"
+          ]
+        }
+      ],
+      "narrative": "With 56.3% rating it neutral (3/5), 'Now anyone can design' epitomized safe, uninspiring messaging that neither offended nor motivated. The tagline's 2.7 average rating and mere 7.8% selection as most interesting reflect its fundamental problem: complete commoditization. Every respondent recognized this promise from other tools, making Adobe Express indistinguishable in a crowded market.\n\nThe tagline created an identity tension between inclusivity and expertise. While some Students and beginner Massy Consumers appreciated the welcoming tone, Small Business owners and Creators felt it erased their hard-won skills. One Creator's complaint — 'I'm not anyone. I've invested in Photoshop, Lightroom, Premiere' — captures how democratization language can alienate power users. The tagline's generic nature also failed to leverage any Indian market specificity, reading as a global message dropped into local context without adaptation. Its poor performance suggests audiences want either concrete benefits or emotional resonance — not bland universalism."
+    },
+    {
+      "variantId": "v5",
+      "variantText": "Empowering Indians to design",
+      "averageRating": 2.23,
+      "interestPercent": 1.6,
+      "ratingDistribution": [
+        {
+          "rating": 5,
+          "count": 0,
+          "percent": 0
+        },
+        {
+          "rating": 4,
+          "count": 2,
+          "percent": 3.1
+        },
+        {
+          "rating": 3,
+          "count": 18,
+          "percent": 28.1
+        },
+        {
+          "rating": 2,
+          "count": 37,
+          "percent": 57.8
+        },
+        {
+          "rating": 1,
+          "count": 7,
+          "percent": 10.9
+        }
+      ],
+      "topPositives": [
+        {
+          "category": "Acknowledgment of Indian creators",
+          "count": 8,
+          "themes": "Some appreciated explicit Indian inclusion",
+          "quotes": [
+            "It acknowledges that design tools weren't always accessible to people like me",
+            "It feels like something made for people like me. I'm a homemaker, and this tells me my creativity matters"
+          ]
+        },
+        {
+          "category": "Well-intentioned inclusion",
+          "count": 6,
+          "themes": "The sentiment was recognized even if execution failed",
+          "quotes": [
+            "Nice sentiment but feels corporate-y",
+            "It's well-meaning. I appreciate the nod to Indian creators"
+          ]
+        },
+        {
+          "category": "Supportive tone",
+          "count": 4,
+          "themes": "A few found the empowerment angle motivating",
+          "quotes": [
+            "Feels supportive, but also a bit formal",
+            "The message is warm"
+          ]
+        }
+      ],
+      "topNegatives": [
+        {
+          "category": "Patronizing and condescending",
+          "count": 32,
+          "themes": "Empowerment language felt insulting to capable users",
+          "quotes": [
+            "I don't need empowerment; I need a tool that works",
+            "Makes me feel like they think I need permission or help to be creative, which is off-putting"
+          ]
+        },
+        {
+          "category": "Corporate CSR language",
+          "count": 24,
+          "themes": "Tone reminded users of NGO campaigns, not products",
+          "quotes": [
+            "Sounds like a government ad or a CSR campaign",
+            "Feels like an NGO tagline. I want a tool, not a mission statement"
+          ]
+        },
+        {
+          "category": "Misaligned with user needs",
+          "count": 18,
+          "themes": "Focus on empowerment ignored practical requirements",
+          "quotes": [
+            "I'm not looking to be empowered by a design app. I want to feel like I'm using a cool, easy tool",
+            "I don't need empowering. I need faster rendering and better batch export"
+          ]
+        }
+      ],
+      "narrative": "Performing worst at 2.23/5 with only 3.1% interest, 'Empowering Indians to design' triggered near-universal rejection through its patronizing tone. The word 'empowering' became a lightning rod — 57.8% rated it poorly, with respondents across all cohorts explicitly stating they didn't need empowerment. The tagline's failure reveals how CSR-style language backfires when applied to consumer products, especially among audiences already actively creating.\n\nThe rejection was particularly fierce among Creators and Small Business owners who saw the tagline as infantilizing their professional capabilities. Even Massy Consumers, who might benefit from accessible tools, bristled at the implication they lacked agency. The repeated comparisons to 'NGO campaigns' and 'government schemes' indicate the tagline activated institutional rather than aspirational associations. While 2 respondents appreciated the Indian acknowledgment, the execution's corporate stiffness and savior complex overwhelmed any positive cultural connection. This tagline's failure offers a clear lesson: Indian consumers want recognition as capable creators, not charity cases requiring empowerment."
+    }
+  ],
+  "crossThemes": [
+    {
+      "title": "The Hinglish Advantage vs. Nationalist Overreach",
+      "analysis": "The panel revealed a critical distinction between authentic code-switching and forced patriotism. 'Ek click mein design' succeeded by using Hinglish naturally — respondents called it 'warm,' 'like my WhatsApp chats,' and 'speaking my language.' This organic bilingualism created cultural connection without agenda. In contrast, 'Ab India karega design' failed despite also using Hindi, because it wrapped language in nationalist messaging that felt disconnected from personal creative needs. The data suggests Indian consumers embrace linguistic localization when it reflects how they actually communicate, but reject it when packaged with heavy-handed patriotic themes. Success lies in cultural authenticity, not cultural performance."
+    },
+    {
+      "title": "Speed Promises vs. Craft Respect",
+      "analysis": "A fundamental tension emerged between efficiency and expertise across cohorts. 'Ek click mein design' led quantitatively by promising speed, resonating with time-pressed Massy Consumers and Small Business owners who need quick turnarounds. Yet this same promise alienated Creators who felt it trivialized their craft — 'My wedding edits aren't one-click jobs.' Meanwhile, 'Magic of design. In your hands.' scored lower overall but earned Creator respect by acknowledging user agency. This suggests Adobe Express faces a positioning challenge: how to promise efficiency without implying design is effortless. The solution may be segmented messaging that adapts to user expertise levels."
+    },
+    {
+      "title": "Empowerment Language as Cultural Misread",
+      "analysis": "The universal rejection of 'empowerment' messaging reveals a sophisticated audience that resents being positioned as lacking capability. Both 'Empowering Indians to design' and to lesser extent 'Ab India karega design' failed because they implied Indians needed permission or help to be creative. Respondents across cohorts explicitly stated 'I don't need empowerment; I need a tool that works.' This wasn't just about word choice but about fundamental positioning — Indian consumers see themselves as already capable creators seeking better tools, not as an underserved population requiring uplift. The strongest taglines ('Ek click mein,' 'Magic of design') succeeded by assuming competence rather than conferring it."
+    }
+  ],
+  "strategicTakeaways": [
+    {
+      "principle": "Position the tool as enhancing existing talent, not enabling absent capability",
+      "explanation": "Creators and professionals rejected any implication they lacked skills, while even beginners preferred messages assuming their creativity already exists"
+    },
+    {
+      "principle": "Lead with concrete utility in Indian markets, wrap with cultural warmth",
+      "explanation": "The winning tagline succeeded through practical promise (speed) delivered in authentic language (Hinglish), not through patriotic appeals or abstract concepts"
+    },
+    {
+      "principle": "Avoid institutional language that triggers NGO/government associations",
+      "explanation": "Words like 'empowering' and nationalist framing made respondents think of PSAs and CSR campaigns rather than modern creative tools"
+    }
+  ],
+  "adrsRecommendation": {
+    "taglineId": "v2",
+    "taglineText": "Ek click mein design (Design with a single click)",
+    "supportingFactors": [
+      "Highest quantitative performance (3.81/5 rating)",
+      "Strongest intent-to-try (39% selection rate)",
+      "Authentic Hinglish resonance without polarizing nationalism"
+    ],
+    "primaryRecommendation": "'Ek click mein design' — the only tagline that delivered both cultural authenticity and concrete value proposition without alienating any major cohort",
+    "rationale": "While no runaway winner emerged, v2's combination of practical promise and linguistic warmth achieved the best balance across metrics, though recommend testing with Adobe brand context to validate."
+  },
+  "keyFindings": [
+    {
+      "theme": "Hinglish creates warmth without forcing nationalism",
+      "summary": "Code-switching to Hinglish generated positive emotional response when focused on utility rather than patriotic messaging",
+      "evidence": [
+        "'Ek click mein design' scored 3.81/5 vs 2.48/5 for nationalist 'Ab India karega'",
+        "24 respondents explicitly praised Hinglish as 'warm' and 'natural'"
+      ],
+      "sentiment": "positive"
+    },
+    {
+      "theme": "Empowerment language universally backfires",
+      "summary": "Indian consumers reject being positioned as needing empowerment, seeing themselves as already capable",
+      "evidence": [
+        "'Empowering Indians' scored lowest at 2.23/5",
+        "32 respondents called it 'patronizing' or 'condescending'"
+      ],
+      "sentiment": "negative"
+    },
+    {
+      "theme": "Professionals protect craft identity",
+      "summary": "Creators and Small Business owners rejected taglines implying design is trivial or that anyone can do it equally",
+      "evidence": [
+        "Creators rated 'Now anyone can design' at 2.7/5",
+        "'My wedding edits aren't one-click jobs' typified professional pushback"
+      ],
+      "sentiment": "mixed"
+    },
+    {
+      "theme": "Speed beats aspiration for mass market",
+      "summary": "Time-pressed users prioritized efficiency promises over emotional or aspirational messaging",
+      "evidence": [
+        "39% chose 'Ek click mein design' as most interesting",
+        "28 respondents explicitly valued speed promise"
+      ],
+      "sentiment": "positive"
+    }
+  ],
+  "recommendations": [
+    "Proceed with 'Ek click mein design' but test with Adobe Express branding to ensure brand lift doesn't change reception",
+    "Develop segmented messaging that adapts expertise acknowledgment based on user journey stage",
+    "Avoid empowerment language entirely in Indian market communications",
+    "Consider A/B testing 'Magic of design. In your hands.' for Creator-focused campaigns given its respect for agency",
+    "Invest in product features that genuinely deliver on speed promise to avoid disappointment"
+  ],
+  "methodologyNote": "Synthetic panel study with 64 respondents across four Indian creator personas (Massy Consumer 45%, Small Business 28%, Student 16%, Creator 11%). Taglines presented as text-only without Adobe attribution to isolate message impact. Respondents rated each tagline 1-5 and selected most compelling option."
+}

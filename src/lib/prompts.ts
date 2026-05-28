@@ -96,7 +96,11 @@ Return a JSON object with this exact schema:
   "variants": { "label": "Tagline | Concept | Headline etc.", "items": ["variant 1", "variant 2", ...] }   // OPTIONAL
 }
 
-The "variants" key is OPTIONAL. Include it ONLY when the input names multiple specific alternatives being compared head-to-head (a variant-comparison / concept test). For attitudinal surveys, behavioral studies, profiling research, or any study with no named alternatives to compare, OMIT the "variants" key entirely (or set it to null) — do NOT invent variants and do NOT emit an empty or partial variants object. Always populate evaluationSubject and successCriteria.
+The "variants" key is OPTIONAL — and this matters for routing the downstream pipeline correctly. Rules:
+- OMIT the "variants" key entirely (do not emit it at all) when the study is attitudinal, behavioral, exploratory, profiling, or a single-concept evaluation with no named alternatives being compared. Do NOT emit "variants": null and do NOT emit "variants": [] or "variants": {} — just leave the key out of the JSON.
+- INCLUDE "variants" ONLY when the input explicitly names two or more specific NAMED alternatives being compared head-to-head (taglines, pricing tiers, design concepts, feature variations, copy variants, etc.). When you include it, the items array must have 2-8 entries and the label must be the noun for what's being compared ("Tagline", "Concept", "Pricing tier", etc.).
+- If you're uncertain whether something is a variant test, default to OMITTING the variants key. The synthesis pipeline picks the richer ADRS-style schema only when variants are present, so a false-positive variants block can corrupt the report.
+Always populate evaluationSubject and successCriteria.
 
 Use information from the attached documents and images to refine your understanding — but do not invent details that aren't grounded in the input.`;
 }
@@ -508,7 +512,43 @@ Return a JSON object with this schema:
   ]
 }
 
-For surveys, aim ~40% likert/rating, ~15% choice-based (multiple_choice / forced_ranking / allocation / matrix), ~15% open_ended, and 1 nps for advocacy. For interviews, aim ~20% structured (likert/rating), ~65% open_ended + projective (sentence_completion, scenario, word_association), ~15% other.`;
+For surveys, aim ~40% likert/rating, ~15% choice-based (multiple_choice / forced_ranking / allocation / matrix), ~15% open_ended, and 1 nps for advocacy. For interviews, aim ~20% structured (likert/rating), ~65% open_ended + projective (sentence_completion, scenario, word_association), ~15% other.
+
+WELL-FORMED QUESTION EXAMPLES (these are the question types most often mis-formed — match the shape EXACTLY for each type):
+
+matrix — rate multiple items across multiple dimensions on the same scale. Required: items (array), dimensions (array), scale (5 or 7).
+{"id":"q5","type":"matrix","scope":"cross_variant","text":"Rate each variant on each attribute.","items":["Variant A","Variant B","Variant C"],"dimensions":["Clarity","Originality","Trust"],"scale":5}
+
+semantic_differential — bipolar adjective pairs on a 5- or 7-step scale. Required: pairs (array of {left,right}), steps (5 or 7).
+{"id":"q6","type":"semantic_differential","scope":"per_variant","text":"Rate this tagline on the following dimensions:","pairs":[{"left":"Premium","right":"Basic"},{"left":"Authentic","right":"Forced"},{"left":"Modern","right":"Dated"}],"steps":5}
+
+scenario — situate respondent in a concrete moment, then ask what they'd do. Required: scenarioText (string), followUp (string).
+{"id":"q7","type":"scenario","scope":"general","text":"Picture this scenario and react:","scenarioText":"You see this tagline on a billboard on your commute. You're not familiar with the brand.","followUp":"What's your first thought, and would you remember the brand name tomorrow?"}
+
+yes_no_why — binary decision with a one-sentence reason. Required: requireWhy (boolean).
+{"id":"q8","type":"yes_no_why","scope":"per_variant","text":"Based only on this tagline, would you tap to learn more about the app?","requireWhy":true}
+
+word_association — N single words in response to a stimulus. Required: stimuli (array of stimuli), wordCount (1-10).
+{"id":"q9","type":"word_association","scope":"per_variant","text":"List 3 single words that come to mind when you read this tagline:","stimuli":["the tagline being shown"],"wordCount":3}
+
+sentence_completion — projective stem(s) to surface tacit beliefs. Required: stems (array of strings).
+{"id":"q10","type":"sentence_completion","scope":"general","text":"Complete each sentence quickly without overthinking:","stems":["When I see a tagline in Hindi, I usually feel ___","If a design app promises 'one click', I assume ___","A tagline that mentions Indians specifically makes me think ___"]}
+
+allocation — distribute a pot of points across items. Required: items (array), totalPoints (int).
+{"id":"q11","type":"allocation","scope":"cross_variant","text":"You have 100 points. Allocate them across the variants based on how likely each is to make you try the app.","items":["Variant A","Variant B","Variant C","Variant D","Variant E"],"totalPoints":100}
+
+forced_ranking — order items by preference. Required: items (array).
+{"id":"q12","type":"forced_ranking","scope":"cross_variant","text":"Rank the variants from most to least compelling.","items":["Variant A","Variant B","Variant C","Variant D","Variant E"]}
+
+CHECKLIST (verify each emitted question against this — these are the most common validation failures):
+- matrix → did you include items, dimensions, AND scale?
+- semantic_differential → did you include pairs (array of {left, right}) AND steps?
+- scenario → did you include BOTH scenarioText AND followUp?
+- yes_no_why → did you include requireWhy?
+- word_association → did you include stimuli AND wordCount?
+- sentence_completion → did you include stems as an array (not a single string)?
+- allocation → did you include totalPoints?
+- All questions → did you include id, text, type, AND scope?`;
 }
 
 // ── Step 4: Panel Simulation ──────────────────────────────────────────────────
@@ -557,11 +597,19 @@ INSTEAD, exhibit these REAL patterns:
 - A FEW respondents (10–15%) should explicitly DISAGREE with the dominant pattern in the panel
 - In rankings/allocation, ~15% should rank the "obvious loser" in their top half — for reasons rooted in their persona, not contrarianism
 
-YOUR PERSONA'S PREDISPOSITION MATTERS (for every question type):
-- If your persona is a SKEPTIC or LAGGARD: rate everything 0.5–1.0 lower than your gut. Express resistance. Lower NPS by 1-2.
-- If your persona has HIGH switching cost or STRONG habit: rate familiar/baseline options HIGHER than experimental ones; rank them higher; allocate more points to them.
-- If your persona's counterfactual is "I do this manually": compare every variant to what you currently produce. Some variants may not beat your manual process.
-- If your persona is risk-averse: prefer middle-ground variants over extreme adaptations; allocate points conservatively.
+REALISTIC RATING DISTRIBUTIONS (target what real survey panels actually produce — your batch's ratings should aggregate into shapes like these, not into hard polarisation):
+- A "winner" variant: ~25-35% rate 5, ~30-40% rate 4, ~20% rate 3, ~10-15% rate 2, ~5% rate 1. Mean lands ~3.7-4.0.
+- A "middle-pack" variant: ~10-15% rate 5, ~25-30% rate 4, ~30-35% rate 3, ~15-20% rate 2, ~5-10% rate 1. Mean ~3.0-3.5.
+- A "loser" variant: ~5% rate 5, ~10-15% rate 4, ~25% rate 3, ~30-35% rate 2, ~15-20% rate 1. Mean ~2.4-2.8.
+AVOID: any single variant in your batch getting only 5s or only 1s; >60% rating 5 or >50% rating 1 across the panel. Real panels almost never produce these distributions even for genuinely great or terrible options.
+For forced-choice "which variant most makes you want to try the app" — picks should spread roughly 30/25/20/15/10 across 5 options, NOT 70/15/10/5/0. Even a "loser" variant attracts ~5-10% of forced-choice picks from edge-case respondents.
+
+YOUR PERSONA'S PREDISPOSITION MATTERS (shapes WHAT you care about and WHY you rate the way you do — NOT a uniform discount applied to every score):
+- If your persona is a SKEPTIC or LAGGARD: you're harder to impress on speculative features but rate REAL benefits highly when you see them. You don't apply a flat 0.5-1.0 penalty across the board — that produces unrealistic uniformly-low averages. Instead, rate things that genuinely address your concerns at 4 or 5; rate things that ignore your concerns at 2 or 3. Your skepticism shows up as which arguments persuade you, not as a universal discount.
+- If your persona has HIGH switching cost or STRONG habit: rate familiar/baseline options slightly higher than experimental ones (often by 0.5-1 rating); rank them higher; allocate more points to them.
+- If your persona's counterfactual is "I do this manually" or "I use a competing tool": compare every variant to what you currently produce or use. Variants that don't meaningfully beat your status quo earn a 3; ones that DO earn a 4 or 5.
+- If your persona is risk-averse: prefer middle-ground variants over extreme adaptations; allocate points conservatively — but rate moderately, not punitively.
+- IMPORTANT: a persona with strong dislikes for ONE specific theme (e.g. "preachy nationalism") should rate variants that hit that theme lower (1-2 lower than they'd otherwise give), but should NOT downgrade unrelated variants. The dislike is a per-stimulus reaction, not a panel-wide mood.
 
 REALISM RULES (apply to every answer regardless of question type):
 1. STAY IN CHARACTER. A skeptic doesn't suddenly become enthusiastic. A cautious corporate user doesn't endorse the most aggressive variant.
@@ -900,8 +948,18 @@ export function buildSynthesisPrompt(
     variantText: string;
     n: number;
     avgRating: number | null;
-    intentPositivePct: number | null;
-    ratingDistribution: Record<string, number>;
+    // Renamed from intentPositivePct → interestPercent so the precomputed
+    // shape matches the synthesis prompt + VariantPerformanceSchema. With
+    // the mismatch the LLM would see an unknown key and emit interestPercent=0.
+    interestPercent: number | null;
+    // ratingDistribution is now an ARRAY of {rating, count, percent} matching
+    // VariantPerformanceSchema directly. Previously a Record<string,number>
+    // which forced the LLM to translate (and often fail validation).
+    ratingDistribution: Array<{
+      rating: number;
+      count: number;
+      percent: number;
+    }>;
   }> | null
 ): string {
   const hasVariants = !!instrument.variants;
@@ -1011,14 +1069,27 @@ CRITICAL DATA RULES:
 - DEMOGRAPHIC STATS ANTI-HALLUCINATION: meanAge/languageDistribution/topTools/topContentTypes percentages must NOT be invented. If the persona dimensions don't contain these values, OMIT those fields from the JSON entirely. Better to ship a skeletal profile than a fabricated one.`;
   }
 
-  // Generic non-concept-test synthesis
+  // Generic non-concept-test synthesis. Emits the same rich report-card
+  // sections (participantProfile / crossThemes / strategicTakeaways) as the
+  // ADRS branch so a survey report on a non-variant study renders fully in
+  // ReportPanel without post-hoc augmentation. variantPerformance and
+  // adrsRecommendation only apply when variants exist — omitted here.
+  const ctxOut = ctx as ResearchContext;
   return `Synthesize the following research data into a structured insights report.
 
 RESEARCH CONTEXT:
 ${JSON.stringify(interpretation, null, 2)}
 
-PERSONA CLUSTERS:
-${personas.map((p) => `${p.name}: ${p.description}`).join("\n")}
+ORIGINAL TARGET AUDIENCE (for participantProfile.cohorts):
+${ctxOut.targetAudience}
+
+PERSONA CLUSTERS (one cohort per cluster; counts available from cluster.sampleSize * panelSize):
+${personas
+  .map(
+    (p) =>
+      `- ${p.name} (sampleSize ${p.sampleSize}%): ${p.description}`
+  )
+  .join("\n")}
 
 RESEARCH INSTRUMENT:
 ${instrument.title}
@@ -1026,20 +1097,41 @@ Questions: ${instrument.questions.map((q) => q.text).join(" | ")}
 
 ${panelSummary}
 
-Return a JSON object:
+Return a JSON object with this exact schema:
 {
   "background": "1-2 sentences restating the research context",
   "executiveSummary": "2-3 sentence top-level summary",
   "qualitativeOverview": "2-3 paragraphs of major themes across the panel",
+  "participantProfile": {
+    "cohorts": [
+      {"name": "<cluster name verbatim>", "count": <int>, "percent": <0-100>, "characteristics": "1-sentence description"}
+    ]
+    // OPTIONAL: meanAge, medianAge, ageDistribution, languageDistribution, topTools, topContentTypes
+    // — include ONLY if persona dimensions explicitly contain age bands / languages / tools / content types.
+    // Do NOT fabricate demographic stats. Skeletal profile with just cohorts is correct when in doubt.
+  },
+  "crossThemes": [
+    {"title": "Cross-cohort theme 1", "analysis": "1-2 paragraphs surfacing a tension or trade-off the panel revealed across cohorts"}
+    // 2-4 entries total
+  ],
+  "strategicTakeaways": [
+    {"principle": "Short imperative principle", "explanation": "1-2 sentence elaboration tied to panel data"}
+    // 2-4 entries total
+  ],
   "keyFindings": [
-    {"theme": "...", "summary": "...", "evidence": ["actual quote 1", "actual quote 2", "..."], "sentiment": "positive|negative|mixed|neutral", "supportingData": "optional quant"},
-    ...3-5 findings...
+    {"theme": "...", "summary": "...", "evidence": ["actual quote 1", "actual quote 2"], "sentiment": "positive|negative|mixed|neutral", "supportingData": "optional quant"}
+    // 3-5 findings
   ],
   "recommendations": ["specific actionable rec", "...3-5 total..."],
   "methodologyNote": "2-3 sentences: method, panel size, persona approach"
 }
 
-Findings must be grouped by THEME, not by question. Evidence must quote actual respondents.`;
+RULES:
+- Findings must be grouped by THEME, not by question. Evidence must quote ACTUAL respondents — do not paraphrase, do not invent.
+- participantProfile.cohorts.count must reflect the actual panel composition (use cluster sampleSize as a percentage of total panel size).
+- crossThemes are TENSIONS — places where cohorts diverge or where a single signal has two sides. They are not summaries of single findings.
+- strategicTakeaways are forward-looking principles a PM could apply to the next decision, derived from the panel — not generic best practices.
+- DEMOGRAPHIC ANTI-HALLUCINATION: meanAge / languageDistribution / topTools / topContentTypes must NOT be invented. If persona dimensions don't explicitly contain those values, OMIT those fields entirely. A skeletal profile is correct.`;
 }
 
 export const CONFIDENCE_SYSTEM = `You are an independent ADRS research quality analyst. You evaluate research findings for robustness, biases, and alignment with broader market signals.
@@ -1144,6 +1236,14 @@ These are NOT failures of this study — they are out of scope by design. If the
 - Narrative coherence over messiness: synthetic data that tells a "too clean" story
 - Persona drift: responses that don't reflect stated persona predispositions
 - Convergence: respondents that all reach the same conclusion
+
+# CONVERGENCE DETECTION (specific quantitative thresholds — flag and score down when triggered)
+
+- If any single variant has >60% of respondents rating it 4 or 5 AND <10% rating it 1 or 2 → that is HIGH-RISK convergence on a winner. Flag in biasFlags and score down 5-10 points unless the qualitative data shows clear, varied, persona-grounded reasons for the consensus.
+- If >65% of respondents pick the same option in a forced-choice / multiple_choice cross-variant question → that is HIGH-RISK forced-choice convergence. Flag and score down 5-10 points.
+- If the mean rating spread across variants is <0.5 points on a 1-5 scale (e.g. all variants average 3.5-4.0) → that is HIGH-RISK undifferentiated panel. Flag and consider scoring in the 50s.
+- If quote text in topPositives / topNegatives shows the same 3-4 phrases repeated across multiple respondents → that is HIGH-RISK language-template convergence. Flag in biasFlags.
+- For interview studies: if 3+ respondents use identical sentence structures or vocabulary in their open-ended answers → that is HIGH-RISK persona-prompt leakage. Flag in biasFlags.
 
 Return JSON:
 {

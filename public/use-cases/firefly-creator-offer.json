@@ -314,7 +314,7 @@
     "instrument": {
       "title": "Adobe Firefly Creator Offer — Subscriber Survey",
       "description": "A profiling and satisfaction survey of subscribers to Adobe's new Firefly Creator Offer paid plans (FFST/FFPO/FFPU). Covers who subscribed, why they signed up, what creative work they use Firefly for, and how satisfied they are — with a Firefly Standalone vs Multi-Plan comparison.",
-      "rationale": "Recreates the ADRS subscriber-survey methodology: a ~30-question online survey compressed to 18 items, mixing multiple-choice profiling questions with open-ended motivation and satisfaction questions. Reported as scaled-qualitative, directional input given the small sample. ADRS's 7-point satisfaction scale is approximated with PRISM's 5-point Likert (closest available proxy).",
+      "rationale": "A ~30-question online subscriber survey compressed to 18 items, mixing multiple-choice profiling questions with open-ended motivation and satisfaction questions. Reported as scaled-qualitative, directional input given the small sample. A 7-point satisfaction scale is approximated with PRISM's 5-point Likert (closest available proxy).",
       "questions": [
         {
           "id": "q1",

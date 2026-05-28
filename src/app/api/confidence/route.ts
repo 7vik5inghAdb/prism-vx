@@ -1,4 +1,6 @@
-export const maxDuration = 60;
+// 300 s — confidence is a lightweight single Opus call but kept consistent
+// with the other routes. Local dev ignores this; Vercel paid plan honors it.
+export const maxDuration = 300;
 
 import { NextRequest, NextResponse } from "next/server";
 import { callLLM, zodValidator } from "@/lib/llm";

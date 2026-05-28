@@ -1,4 +1,7 @@
-export const maxDuration = 60;
+// 300 s — Haiku 4.5 batches usually finish in 20-40s but a slow Anthropic
+// instance plus a large variant payload can push past 60s. Local dev ignores
+// this; Vercel paid plan honors it.
+export const maxDuration = 300;
 
 import { NextRequest, NextResponse } from "next/server";
 import { callLLM, parseJSON } from "@/lib/llm";
@@ -220,7 +223,11 @@ async function handleSurveyBatch(
     // the whole point of the simulator; the anti-convergence rules in the
     // system prompt only work if sampling temperature lets variance through.
     temperature: 0.9,
-    maxTokens: variants ? 12000 : 6000,
+    // 16000 (variant studies) / 8000 (general): 5 respondents × 5+ variants
+    // × per-variant question density can exceed 12k at 0.9 temperature with
+    // rich open-ended answers — previous cap silently truncated the last
+    // respondent's answers in batches that pushed the boundary.
+    maxTokens: variants ? 16000 : 8000,
     step: `step4_survey_batch_${batchIndex}`,
     modelTier: "simulation",
   });
@@ -328,7 +335,8 @@ async function handleInterview(
     // 0.9 — same rationale as the survey path: interview respondents need
     // distinct voices, and the persona system prompt keeps them grounded.
     temperature: 0.9,
-    maxTokens: 6000,
+    // 8000 — interviews with 10+ open-ended questions can exceed 6000.
+    maxTokens: 8000,
     step: `step4_interview_${respondentIndex}`,
     modelTier: "simulation",
   });

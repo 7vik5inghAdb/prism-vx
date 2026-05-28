@@ -167,7 +167,10 @@ export async function callLLM<T = unknown>(
 ): Promise<LLMResponse<T>> {
   const promptHash = hashPrompt(params.userPrompt);
   const temperature = params.temperature ?? 0.3;
-  const maxTokens = params.maxTokens ?? 4096;
+  // Default cap bumped 4096 → 6000. Most callers set their own (synthesize
+  // up to 16k); this default is a safety net for ad-hoc calls. Opus and
+  // Haiku both have ample output budgets; 6000 reduces silent truncation.
+  const maxTokens = params.maxTokens ?? 6000;
   const maxValidationRetries = params.maxValidationRetries ?? 2;
 
   let currentPrompt = params.userPrompt;
@@ -210,21 +213,29 @@ export async function callLLM<T = unknown>(
     );
 
     if (attempt < maxValidationRetries) {
-      // Show the model its own bad output + the validator error and ask for a fix.
-      const previousOutput = response.text.slice(0, 1200);
+      // Show the model its own bad output + the validator error and ask for
+      // a surgical fix. 3000 chars (was 1200) lets the LLM see most or all
+      // of its prior response, which is critical for diagnosing nested-field
+      // failures (e.g. "variantPerformance.2.topPositives.0.quotes is
+      // required" — needs to see what was emitted for variant 2).
+      //
+      // Images (params.images) are automatically re-passed via singleCall on
+      // every loop iteration — no change needed; the original implementation
+      // already preserves visual context across retries.
+      const previousOutput = response.text.slice(0, 3000);
       currentPrompt = `${params.userPrompt}
 
 ---
 
 YOUR PREVIOUS RESPONSE FAILED SCHEMA VALIDATION.
 
-YOUR PREVIOUS OUTPUT (first 1200 chars):
+YOUR PREVIOUS OUTPUT (first 3000 chars):
 ${previousOutput}
 
 VALIDATION ERROR:
 ${result.error}
 
-REPAIR the output. Return ONLY a valid response that satisfies the schema described above. No commentary, no markdown fences — just the corrected JSON. Pay special attention to: required fields, exact field names, allowed enum values, and the JSON formatting rules called out in the original prompt.`;
+REPAIR the output. Return ONLY a valid response that satisfies the schema described above. No commentary, no markdown fences — just the corrected JSON. Pay special attention to: required fields, exact field names, allowed enum values, and the JSON formatting rules called out in the original prompt. Re-use as much of the prior content as possible — only fix what the validator flagged.`;
     }
   }
 

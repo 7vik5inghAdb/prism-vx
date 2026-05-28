@@ -1,4 +1,6 @@
-export const maxDuration = 60;
+// 300 s — comfortably above any orchestrator call. Local dev ignores this;
+// Vercel paid plan honors it. Default 60 s would clip a slow Opus call.
+export const maxDuration = 300;
 
 import { NextRequest, NextResponse } from "next/server";
 import { callLLM, zodValidator } from "@/lib/llm";
@@ -46,7 +48,9 @@ export async function POST(req: NextRequest) {
       // 0.4 — interpretation should be predictable; small temperature reduces
       // study-type misclassification across runs without going fully deterministic.
       temperature: 0.4,
-      maxTokens: 2000,
+      // 3000 — interpretations with long restatedObjectives + variants block
+      // were sometimes clipped at the old 2000 cap. Opus has ample headroom.
+      maxTokens: 3000,
       step: "step1_orchestrate",
       validate: zodValidator(
         OrchestratorInterpretationSchema,

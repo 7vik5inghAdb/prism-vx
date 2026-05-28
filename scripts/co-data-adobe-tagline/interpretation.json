@@ -1,0 +1,34 @@
+{
+  "summary": "A variant-comparison concept test of five candidate marketing taglines for Adobe Express in India. The study measures resonance (1-5) and intent-to-try-the-app across four cohorts of Indian creative-tool users (Massy Consumer, Small Business / Solopreneur, Student, Creator / Influencer), with rich qualitative sentiment analysis driving a single defended primary recommendation.",
+  "restatedHypothesis": "A tagline that combines emotional resonance with practical clarity will outperform purely aspirational or purely functional taglines, AND a culturally-rooted (Hindi or Indian-pride) framing will outperform a generic English message for the Indian creative-tool market.",
+  "restatedResearchQuestion": "Among five candidate Adobe Express India taglines, which performs best on resonance and on intent-to-try? Which sentiment themes drive performance up or down? Are nationalistic or Hindi-language framings net-positive or net-polarising in the Indian market?",
+  "restatedProduct": "Adobe Express, India — a consumer creative design tool for people with light creative design needs. Tagline variants are presented as standalone text with NO brand attribution and NO visuals, isolating message effect from brand trust.",
+  "restatedAudience": "Indian users of creative tools (mean age ~32, mostly 18-44, multilingual with English 100% / Hindi 89%, template-driven, Canva-dominant). Four overlapping cohorts: Massy Consumer (~51%), Small Business / Solopreneur (~32%), Student (~17%), Creator / Influencer (~13%, partially overlapping with the others).",
+  "restatedObjectives": [
+    "Quantify each tagline on a 1-5 resonance scale and rank by average rating.",
+    "Identify which tagline drives the most intent-to-try-the-app via a forced-choice question with reasoning.",
+    "Surface top 3 positive and top 3 negative sentiment themes per tagline with supporting quotes.",
+    "Synthesise cross-tagline insights around aspiration vs clarity, ease and simplicity, and national-identity messaging.",
+    "Land a primary recommendation with caveats about the missing brand context."
+  ],
+  "researchFocus": "Whether any of the five candidate taglines decisively wins on a combination of resonance + intent-to-try + low downside (cliché / condescension / linguistic exclusion), or whether the field is statistically tied and a strategic principle — rather than a winning slogan — is the most honest takeaway for marcomms.",
+  "potentialChallenges": [
+    "Three of the five taglines may finish in a statistical tie — differences of 0.1-0.2 on a 5-point scale are not significant at n=64.",
+    "Nationalistic messaging is intrinsically polarising — strong positives from one segment will be offset by strong negatives from another.",
+    "Hindi-language taglines may under-resonate among non-Hindi-speaking respondents (~11% of base), even though Hindi is the dominant lingua franca.",
+    "No Adobe brand context is shown to respondents — the message must carry on its own without the lift Adobe's established brand trust normally provides."
+  ],
+  "studyType": "variant_comparison",
+  "evaluationSubject": "Five candidate marketing taglines for Adobe Express in India",
+  "successCriteria": "A primary recommendation that is defensible on three signals together — quantitative resonance, intent-to-try-the-app, and qualitative sentiment direction — alongside an explicit acknowledgment that no single tagline emerged as a runaway winner and a recommended next step to validate the leading candidate with brand context attached.",
+  "variants": {
+    "label": "Tagline",
+    "items": [
+      "Magic of design. In your hands.",
+      "Ek click mein design (Design with a single click)",
+      "Ab India karega design (Now India will design)",
+      "Now anyone can design",
+      "Empowering Indians to design"
+    ]
+  }
+}

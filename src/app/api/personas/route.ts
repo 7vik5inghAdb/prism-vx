@@ -1,4 +1,6 @@
-export const maxDuration = 60;
+// 300 s — personas generation can pause on a busy Opus instance. Local dev
+// ignores this; Vercel paid plan honors it.
+export const maxDuration = 300;
 
 import { NextRequest, NextResponse } from "next/server";
 import { callLLM, zodValidator } from "@/lib/llm";

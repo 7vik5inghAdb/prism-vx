@@ -68,7 +68,22 @@ function VariantImage({
     (c) => c.id === variantId || c.description === variantText
   );
   const img = v?.image;
-  if (!img) return null;
+  if (!img) {
+    // Surface silent mismatches in dev so renaming/re-ID'ing variants
+    // doesn't quietly drop images from the report. Only fires when the
+    // context HAS variants but none match this report variantId/text — i.e.
+    // a real mismatch, not just a study without images.
+    if (
+      context?.variants &&
+      context.variants.length > 0 &&
+      context.variants.some((c) => c.image?.content)
+    ) {
+      console.warn(
+        `[PRISM ReportPanel] VariantImage: no match for variantId=${variantId} / variantText="${variantText.slice(0, 60)}" — context.variants has ${context.variants.length} entries but none match. Image silently omitted.`
+      );
+    }
+    return null;
+  }
   if (img.content) {
     return (
       <img

@@ -36,7 +36,7 @@ const USE_CASES: UseCase[] = [
     slug: "firefly-creator-offer",
     title: "Subscriber survey — Firefly Creator Offer",
     blurb:
-      "Recreation of an Adobe ADRS study: who subscribed to the new Firefly Creator Offer plans, why, and how satisfied they are. 105-respondent survey, Standalone vs Multi-Plan.",
+      "Subscriber profile and satisfaction survey for the new Firefly Creator Offer plans: who subscribed, why, and how satisfied they are. 105-respondent panel, Standalone vs Multi-Plan comparison.",
     studyTypeChip: "Attitudinal survey",
     icon: ClipboardList,
     accent: "from-magenta/15 to-sky/10 border-magenta/30",
@@ -56,28 +56,28 @@ const USE_CASES: UseCase[] = [
   },
   {
     slug: "adobe-tagline",
-    title: "Tagline test — Adobe Express (India)",
+    title: "Positioning test — Adobe Express (India)",
     blurb:
-      "Five tagline variants (Hindi & English) for a consumer creative tool. Compare resonance across four Indian audience cohorts.",
+      "Five Hindi & English taglines for Adobe Express tested with 64 Indian creative-tool users across four cohorts (Massy Consumer / Small Business / Student / Creator). No clear winner — strategic principles instead.",
     studyTypeChip: "Variant comparison",
     icon: Sparkles,
     accent: "from-magenta/20 to-magenta/5 border-magenta/30",
     seedContext: {
       hypothesis:
-        "A tagline that combines emotional resonance with practical clarity will outperform purely aspirational or purely functional taglines.",
+        "A tagline that combines emotional resonance with practical clarity will outperform purely aspirational or purely functional taglines. A culturally-rooted message (Hindi or Indian-pride framing) will outperform a generic English tagline for the Indian creative-tool market.",
       researchQuestion:
-        "Which tagline messaging strategy best balances broad appeal, emotional resonance, and a compelling value proposition?",
+        "Of five candidate marketing taglines for Adobe Express in India — three English (Magic of design. In your hands. / Now anyone can design / Empowering Indians to design) and two with Hindi or Hinglish framing (Ek click mein design / Ab India karega design) — which resonates most strongly with people who regularly use creative tools, drives the highest stated intent to try the app, and avoids the failure modes of vagueness, cliché, condescension or linguistic exclusion?",
       productDescription:
-        "Adobe Express — a consumer-facing creative design tool for people with light creative needs.",
+        "Adobe Express, India — Adobe's consumer-facing creative design tool for people with light creative design needs (social posts, reels, edited images, flyers, posters). India is an explicit growth market and the tagline is one of the core levers for the localised positioning of the app. The five taglines are presented to participants as standalone TEXT only — no Adobe brand attribution and no visuals — to isolate the message itself from the lift that the Adobe brand would otherwise provide.",
       targetAudience:
-        "People in India who regularly use creative tools for light design needs. Four cohorts: Massy Consumer (51%), Small Business (32%), Students (17%), Creators (overlapping).",
+        "People in India who regularly use creative tools for light design needs. The base skews younger (mean age ~31.6, median 25-34; 18-44 makes up ~88%), is multilingual (English 100%, Hindi 89%, Marathi 22%), and is template-driven (top tools: Canva 92%, Adobe Photoshop 55%, CapCut 49%, Adobe Express 25%). Four overlapping cohorts: Massy Consumer / Personal (~51%), Small Business / Solopreneurs (~32%), Students (~17%), Creators / Influencers (~13%, overlapping). Primary content: short-form Videos / Reels (75%), Social posts (73%), Edited images (67%).",
       objectives:
-        "Identify the most effective tagline messaging strategy for the Indian market.",
+        "1. Quantify each tagline on a 1-5 resonance scale and rank by average rating. 2. Identify which tagline drives the most intent to try the app via a forced-choice question. 3. Surface top 3 positive and top 3 negative sentiment themes per tagline. 4. Synthesise cross-tagline insights around aspiration vs clarity, ease and simplicity, and national-identity messaging. 5. Land a single primary recommendation with caveats about the missing brand context.",
       variantTypeLabel: "Tagline",
       variants: [
         { id: "v1", description: "Magic of design. In your hands." },
-        { id: "v2", description: "Ek click mein design" },
-        { id: "v3", description: "Ab India karega design" },
+        { id: "v2", description: "Ek click mein design (Design with a single click)" },
+        { id: "v3", description: "Ab India karega design (Now India will design)" },
         { id: "v4", description: "Now anyone can design" },
         { id: "v5", description: "Empowering Indians to design" },
       ],
