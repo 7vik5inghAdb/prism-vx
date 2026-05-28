@@ -1,6 +1,6 @@
 # PRISM
 
-A tool that lets you run pretend user-research studies — type in a research question, pick an audience, and a bunch of AI "people" answer your survey for you. You get a full report in about 5 minutes that looks like a real research deliverable.
+A tool that lets you run synthetic user-research studies — type in a research question, pick an audience, and a bunch of AI personas answer your survey for you. You get a full report in about 5 minutes that is analogous to a real research deliverable.
 
 Two of the studies are already done and saved (Firefly Creator Offer + Adobe Express India). You can click through those without paying for anything.
 
